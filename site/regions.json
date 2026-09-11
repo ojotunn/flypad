@@ -1,0 +1,83 @@
+{
+ "n": 138639,
+ "unpositioned": 22,
+ "regions": [
+  {
+   "id": 0,
+   "key": "optic",
+   "name": "Optic lobes",
+   "color": "#3d6fd8",
+   "count": 77521
+  },
+  {
+   "id": 1,
+   "key": "central",
+   "name": "Central brain",
+   "color": "#f4d36a",
+   "count": 32380
+  },
+  {
+   "id": 2,
+   "key": "sensory",
+   "name": "Sensory neurons",
+   "color": "#4bd39b",
+   "count": 16353
+  },
+  {
+   "id": 3,
+   "key": "visual_projection",
+   "name": "Visual projection",
+   "color": "#39c8e8",
+   "count": 8037
+  },
+  {
+   "id": 4,
+   "key": "visual_centrifugal",
+   "name": "Visual centrifugal",
+   "color": "#2ba79b",
+   "count": 524
+  },
+  {
+   "id": 5,
+   "key": "ascending",
+   "name": "Ascending",
+   "color": "#c56ce2",
+   "count": 1736
+  },
+  {
+   "id": 6,
+   "key": "sensory_ascending",
+   "name": "Sensory ascending",
+   "color": "#82d86c",
+   "count": 581
+  },
+  {
+   "id": 7,
+   "key": "descending",
+   "name": "Descending (motor commands)",
+   "color": "#ff5e5e",
+   "count": 1299
+  },
+  {
+   "id": 8,
+   "key": "motor",
+   "name": "Motor neurons",
+   "color": "#ff9b3d",
+   "count": 110
+  },
+  {
+   "id": 9,
+   "key": "endocrine",
+   "name": "Endocrine",
+   "color": "#ff80b7",
+   "count": 76
+  },
+  {
+   "id": 10,
+   "key": "unknown",
+   "name": "Unannotated",
+   "color": "#6b6b6b",
+   "count": 22
+  }
+ ]
+}

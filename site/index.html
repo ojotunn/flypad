@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLY — a whole fly brain, live</title>
+<style>
+:root{--bg:#050608;--panel:#0c0e13;--line:#1b1f2a;--text:#d7dbe4;--muted:#7d8494;--accent:#f4d36a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{display:grid;grid-template-columns:1fr 340px;height:100vh}
+#stage{overflow:hidden;background:var(--bg);display:grid;grid-template-rows:1fr minmax(170px,34%)}
+#brain{position:relative;overflow:hidden;cursor:grab}
+#brain.drag{cursor:grabbing}
+#body{border-top:1px solid var(--line);background:#07080b;position:relative;overflow:hidden}
+#body img,#body canvas{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .4s}
+#body img.on,#body canvas.on{opacity:1}
+#corpoHud{position:absolute;left:16px;bottom:12px;display:flex;gap:12px;align-items:baseline;font-size:12px;color:var(--muted);pointer-events:none}
+#corpoModo{font-size:15px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+#corpoModo.escape,#corpoModo.flying{color:#ff5e5e}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:16px;top:14px;pointer-events:none}
+#hud h1{margin:0;font-size:22px;letter-spacing:.14em;font-weight:700;color:#fff}
+#hud .sub{color:var(--muted);font-size:12px;margin-top:2px}
+#hstate.active{color:var(--accent)}
+#hstate.seizure{color:#ff5e5e}
+#status{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+#dot{width:9px;height:9px;border-radius:50%;background:#555}
+#dot.live{background:#3ddc84;box-shadow:0 0 12px #3ddc84}
+#dot.off{background:#ff5e5e;box-shadow:0 0 12px #ff5e5e}
+#hint{position:absolute;right:16px;bottom:10px;font-size:11px;color:var(--muted);pointer-events:none}
+#panel{background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+h2{margin:0 0 8px;font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.stat b{display:block;font-size:18px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:11px}
+.bar{display:grid;grid-template-columns:118px 1fr 48px;align-items:center;gap:8px;margin:5px 0;font-size:12px}
+.bar i{display:block;height:8px;background:#161a24;border-radius:4px;overflow:hidden}
+.bar i b{display:block;height:100%;width:0;background:var(--accent);transition:width .12s linear}
+.bar em{font-style:normal;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+button{background:#141826;color:var(--text);border:1px solid #232838;border-radius:6px;padding:8px 6px;font:inherit;font-size:12px;cursor:pointer}
+button:hover{border-color:#3d4560}
+button.on{border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+.slider{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr 44px;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-top:4px}
+.slider input{width:100%}
+.slider em{font-style:normal;text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
+.mres{font-size:12px;color:var(--muted);line-height:1.5}
+.mres b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+.mres .up{color:#3ddc84}.mres .down{color:#ff5e5e}
+.cards{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.card{font-size:11.5px;line-height:1.35;padding:6px 8px;border-radius:6px;background:#10131b;border-left:3px solid #2a3040;color:var(--text)}
+.card.buy{border-left-color:#3ddc84}.card.sell{border-left-color:#ff5e5e}
+.card.ordem{background:#171a10;border-left-color:var(--accent)}
+.card.ordem.sell{background:#1b1212;border-left-color:#ff5e5e}
+.card .q{color:var(--muted)}
+.card .r{color:#8a93a8;font-style:italic}
+.legend{display:flex;flex-direction:column;gap:4px;font-size:12px}
+.legend div{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center}
+.legend s{display:block;width:10px;height:10px;border-radius:2px;text-decoration:none}
+.legend em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
+.foot{color:var(--muted);font-size:11px;line-height:1.45;margin-top:auto}
+@media (max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:78vh 1fr;height:auto;min-height:100vh}#stage{grid-template-rows:1fr 34%}#panel{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="brain">
+      <canvas id="c"></canvas>
+      <div id="hud"><h1>FLY</h1><div class="sub">a whole fly brain, alive · 138,639 neurons · dev build</div><div class="sub" id="hstate">loading…</div></div>
+      <div id="status"><span id="stxt">connecting…</span><span id="dot"></span></div>
+      <div id="hint">drag to rotate</div>
+    </div>
+    <div id="body">
+      <canvas id="corpoCv"></canvas>
+      <img id="corpoImg" alt="">
+      <div id="corpoHud"><span id="corpoModo"></span><span id="corpoInfo">body offline</span></div>
+    </div>
+  </div>
+  <aside id="panel">
+    <section><h2>Now</h2><div class="stats">
+      <div class="stat"><b id="sSpikes">–</b><span>spikes per brain second</span></div>
+      <div class="stat"><b id="sLived">–</b><span>brain time lived</span></div>
+      <div class="stat"><b id="sRatio">–</b><span>machine seconds per brain second</span></div>
+      <div class="stat"><b id="sSyn">–</b><span>synapses changed since birth</span></div>
+      <div class="stat"><b id="sView">–</b><span>watching now</span></div>
+      <div class="stat"><b id="sStim">none</b><span>active stimuli</span></div>
+      <div class="stat"><b id="sSeiz">–</b><span>blackouts since birth</span></div>
+    </div></section>
+    <section><h2>What she wants to do</h2><div id="bars"></div></section>
+    <section><h2>Stimulate her · dev controls</h2><div class="btns" id="btns"></div></section>
+    <section id="mercadoSec"><h2>Market · <span id="mModo">paper</span> trading on Pons</h2>
+      <div class="mres" id="mResumo">waiting for the market reader…</div>
+      <div class="cards" id="mCards"></div>
+    </section>
+    <section><h2>Regions · spikes per brain second</h2><div class="legend" id="legend"></div></section>
+    <div class="foot">Connectome-constrained leaky integrate-and-fire simulation of the adult <i>Drosophila</i> brain. Model: Shiu et al. 2024; engine derived from fly-brain (MIT). Data: FlyWire v783, development build, non-commercial; brain shell from the FlyWire template mesh. Market: Pons trades become her senses by a fixed public map; her motor neurons become paper orders by fixed rules. No AI agent anywhere: she has reflexes, not a strategy. Nothing here is scripted: every flash is a neuron crossing threshold. The model has no spontaneous activity, so between inputs she is silent; and it has no fatigue, so a runaway state is possible — when it happens she blacks out and comes back, and it is counted. On the body, only the tiny antenna twitches and head glances at rest are physiology rather than decisions.</div>
+  </aside>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script src="/static/fly-cliente.js"></script>
+<script>
+// Tela do cerebro em 3D (three.js): nuvem dos 138 mil neuronios na posicao real dentro da casca do cerebro,
+// girando devagar; cada neuronio que dispara acende e apaga. O corpo 3D chega como quadros JPEG (tipo "corpo").
+const GROUPS=[['feed','feed (proboscis)'],['forward','walk forward'],['turn_L','turn left'],['turn_R','turn right'],['backward','walk backward'],['escape','escape (giant fiber)'],['groom','groom'],['halt','freeze (DNp09)'],['reward','reward (dopamine)']];
+const STIM=[['sugar','Feed her (sugar)'],['bitter','Bitter taste'],['lc4','Shadow (looming)'],['lc16','Object behind (LC16)'],['jo','Vibration (antennae)'],['eye_touch','Touch her eyes'],['reward','Reward (dopamine)'],['p9','Walk drive (P9)'],['mdn','Back-up drive (MDN)']];
+const STATE_TEXT={quiet:'quiet · waiting for input',active:'reacting',seizure:'seizure · runaway activity'};
+const MODE_TEXT={walking:'',escape:'ESCAPE',grooming:'GROOMING',eye_grooming:'GROOMING EYES',feeding:'FEEDING',flying:'FLYING',landing:'LANDING',backing:'BACKING UP',startle:'STARTLE',freeze:'FREEZE',excited:'EXCITED'};
+const CAP_HZ=150, DECAY=0.955, MIN_HEAT=0.02, RATE_WINDOW=20;
+let N=0, regions=[], heat=null, active=null, nActive=0;
+let ws=null, retry=1000, hello=null, auto=false, autoTimer=null;
+let currentStimuli=[], corpoUrl=null, corpoT=0, rxCount=0, rxT0=performance.now(), rxFps=0;
+let renderer=null, scene=null, camera=null, grupo=null, pontos=null, heatAttr=null, casca=null;
+// rotacao: relogio compartilhado com a camera do corpo (rot vem em cada quadro do cerebro); arrastar desloca
+// so nesta tela e volta sozinho ao sincronismo. ROT_FRENTE vira a vista inicial para a cara dela (o eixo z dos
+// dados cresce para tras).
+const ROT_FRENTE=Math.PI;
+let rotBase=0, rotSpeed=0.12, dragOff=0, rotX=0.08, lastInteract=-1e9, lastT=0, dragging=false, dragX=0, dragY=0;
+const $=id=>document.getElementById(id);
+const smooth={}; GROUPS.forEach(g=>smooth[g[0]]=0);
+const regHist=[];
+
+async function load(){
+  const rj=await (await fetch('/static/regions.json')).json();
+  regions=rj.regions; N=rj.n;
+  const xyz=new Float32Array(await (await fetch('/static/neurons.bin')).arrayBuffer());
+  const reg=new Uint8Array(await (await fetch('/static/regions.bin')).arrayBuffer());
+  let shell=null;
+  try{ shell=await (await fetch('/static/shell.bin')).arrayBuffer(); }catch(e){}
+  heat=new Float32Array(N); active=new Int32Array(N);
+  buildUI(); build3D(xyz, reg, shell); connect(); requestAnimationFrame(draw); Corpo3D.init($('corpoCv'));
+}
+
+function build3D(xyz, reg, shell){
+  const cv=$('c');
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:false, alpha:false, powerPreference:'high-performance'});
+  renderer.setClearColor(0x050608, 1);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(36, 1, 0.05, 50);
+  camera.position.set(0, 0.12, 2.75); camera.lookAt(0,0,0);
+  grupo=new THREE.Group(); scene.add(grupo);
+  // nuvem: x lateral, y para cima (dorsal), z profundidade
+  const pos=new Float32Array(N*3), col=new Float32Array(N*3), unk=regions.length-1;
+  const rgb=regions.map(r=>[parseInt(r.color.slice(1,3),16)/255,parseInt(r.color.slice(3,5),16)/255,parseInt(r.color.slice(5,7),16)/255]);
+  for(let i=0;i<N;i++){
+    const r=reg[i]; const c=rgb[r]||[0.4,0.4,0.4];
+    pos[i*3]=xyz[i*3]; pos[i*3+1]=-xyz[i*3+1]; pos[i*3+2]=xyz[i*3+2];
+    if(r===unk){ pos[i*3+2]=-9; }   // sem posicao: fora da cena
+    col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col,3));
+  heatAttr=new THREE.BufferAttribute(heat,1); heatAttr.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('heat', heatAttr);
+  const mat=new THREE.ShaderMaterial({
+    uniforms:{uScale:{value:1.0}},
+    vertexShader:`attribute float heat; attribute vec3 color; varying vec3 vC; varying float vH; uniform float uScale;
+      void main(){ vC=color; vH=heat; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mv;
+        gl_PointSize=(1.5+4.0*heat)*uScale*(2.4/max(0.2,-mv.z)); }`,
+    fragmentShader:`varying vec3 vC; varying float vH;
+      void main(){ vec2 d=gl_PointCoord-0.5; float r2=dot(d,d); if(r2>0.25) discard;
+        float soft=smoothstep(0.25,0.04,r2); float a=(0.16+0.95*vH)*soft;
+        vec3 c=mix(vC*0.85, vec3(1.0), 0.3*vH)*(0.6+1.4*vH); gl_FragColor=vec4(c, a); }`,   // alfa so no blend (aditivo)
+    transparent:true, depthWrite:false, depthTest:true, blending:THREE.AdditiveBlending});
+  pontos=new THREE.Points(geo, mat); grupo.add(pontos);
+  // casca translucida com borda luminosa (fresnel)
+  if(shell){
+    const dv=new DataView(shell); const nv=dv.getUint32(0,true), nf=dv.getUint32(4,true);
+    const v=new Float32Array(shell, 8, nv*3); const f=new Uint32Array(shell.slice(8+nv*12, 8+nv*12+nf*12));
+    const sv=new Float32Array(nv*3);
+    for(let i=0;i<nv;i++){ sv[i*3]=v[i*3]; sv[i*3+1]=-v[i*3+1]; sv[i*3+2]=v[i*3+2]; }
+    const sg=new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.BufferAttribute(sv,3)); sg.setIndex(new THREE.BufferAttribute(f,1)); sg.computeVertexNormals();
+    const sm=new THREE.ShaderMaterial({
+      uniforms:{uColor:{value:new THREE.Color(0x8fb0ff)}},
+      vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform vec3 uColor; varying vec3 vN; varying vec3 vV; void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.4); gl_FragColor=vec4(uColor*(0.35+0.9*f), 0.035+0.30*f); }`,
+      transparent:true, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending});
+    casca=new THREE.Mesh(sg, sm); grupo.add(casca);
+  }
+  resize();
+  const el=$('brain');
+  el.addEventListener('pointerdown',e=>{dragging=true; dragX=e.clientX; dragY=e.clientY; el.classList.add('drag'); el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointermove',e=>{ if(!dragging) return; dragOff+=(e.clientX-dragX)*0.006; rotX=Math.max(-0.7,Math.min(0.7,rotX+(e.clientY-dragY)*0.004)); dragX=e.clientX; dragY=e.clientY; lastInteract=performance.now(); });
+  const up=e=>{dragging=false; el.classList.remove('drag');};
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+}
+
+function resize(){
+  if(!renderer) return;
+  const r=$('brain').getBoundingClientRect(); const dpr=Math.min(1.5,window.devicePixelRatio||1);
+  renderer.setPixelRatio(dpr); renderer.setSize(Math.max(2,r.width), Math.max(2,r.height), false);
+  camera.aspect=r.width/r.height; camera.updateProjectionMatrix();
+  // cerebro e 2x mais largo que alto: afasta a camera em telas estreitas
+  camera.position.z = Math.max(2.75, 2.75*(1.15/Math.max(0.5,camera.aspect)));
+  pontos.material.uniforms.uScale.value=dpr*Math.max(0.6, r.height/620);
+}
+window.addEventListener('resize',resize);
+
+function buildUI(){
+  $('bars').innerHTML=GROUPS.map(g=>`<div class="bar"><span>${g[1]}</span><i><b id="b_${g[0]}"></b></i><em id="e_${g[0]}">0 Hz</em></div>`).join('');
+  $('btns').innerHTML=STIM.map(s=>`<button id="s_${s[0]}" data-s="${s[0]}" title="${(hello&&hello.stimuli&&hello.stimuli[s[0]]&&hello.stimuli[s[0]].description)||''}">${s[1]}</button>`).join('')
+    +`<button id="autoBtn">Auto-stimulate: off</button>`
+    +`<label class="slider">Body speed <input id="tempo" type="range" min="30" max="100" value="100" step="5"><em id="tempoV">100%</em></label>`;
+  $('tempo').oninput=()=>{ const v=+$('tempo').value; $('tempoV').textContent=v+'%'; if(ws&&ws.readyState===1) ws.send(JSON.stringify({corpo_tempo:v/100})); };
+  document.querySelectorAll('#btns button[data-s]').forEach(b=>b.onclick=()=>send(b.dataset.s));
+  $('autoBtn').onclick=()=>{
+    auto=!auto; $('autoBtn').textContent='Auto-stimulate: '+(auto?'on':'off'); $('autoBtn').classList.toggle('on',auto);
+    clearInterval(autoTimer);
+    if(auto){ autoTimer=setInterval(()=>send(STIM[Math.floor(Math.random()*STIM.length)][0]),9000); send('sugar'); }
+  };
+  $('legend').innerHTML=regions.filter(r=>r.key!=='unknown').map(r=>`<div><s style="background:${r.color}"></s><span>${r.name} <em>· ${r.count.toLocaleString()}</em></span><em id="r_${r.id}">0</em></div>`).join('');
+}
+
+function draw(ts){
+  const dt=lastT?Math.min(0.1,(ts-lastT)/1000):0.016; lastT=ts||0;
+  if(corpoT && performance.now()-corpoT>6000){ $('corpoImg').classList.remove('on'); $('corpoCv').classList.remove('on'); $('corpoInfo').textContent='body offline'; $('corpoModo').textContent=''; corpoT=0; }
+  // calor decai; so os ativos sao tocados
+  let k=0;
+  for(let j=0;j<nActive;j++){ const i=active[j]; const h=heat[i]*DECAY; if(h<=MIN_HEAT){heat[i]=0; continue;} heat[i]=h; active[k++]=i; }
+  nActive=k;
+  if(heatAttr) heatAttr.needsUpdate=true;
+  if(grupo){
+    rotBase+=rotSpeed*dt;                       // avanca com o relogio; cada quadro do cerebro corrige
+    if(!dragging && performance.now()-lastInteract>2500){   // volta ao sincronismo devagar
+      dragOff*=Math.exp(-dt/2.0); rotX+=(0.08-rotX)*(1-Math.exp(-dt/2.0));
+      if(Math.abs(dragOff)<0.002) dragOff=0;
+    }
+    grupo.rotation.y=rotBase+ROT_FRENTE+dragOff; grupo.rotation.x=rotX;
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(draw);
+}
+
+function setStatus(state,txt){ $('dot').className=state; $('stxt').textContent=txt; }
+function send(s){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({estimulo:s, ms:500})); }
+
+function connect(){
+  ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+  ws.binaryType='arraybuffer';
+  ws.onopen=()=>{ setStatus('live','live'); retry=1000; };
+  ws.onclose=()=>{ setStatus('off','brain offline · reconnecting'); setTimeout(connect,retry); retry=Math.min(retry*2,15000); };
+  ws.onerror=()=>{ try{ws.close();}catch(e){} };
+  ws.onmessage=e=>{
+    if(typeof e.data==='string'){ const m=JSON.parse(e.data); if(m.tipo==='ola') hello=m; else if(m.tipo==='mercado') onMercado(m); return; }
+    onFrame(e.data);
+  };
+}
+
+function onFrame(buf){
+  const dv=new DataView(buf); const len=dv.getUint32(0,true);
+  const j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,len)));
+  if(j.tipo==='corpo'){ onCorpo(j, buf.slice(4+len)); return; }
+  const idx=j.enc==='dv'?decodeDV(new Uint8Array(buf,4+len)):new Uint32Array(buf.slice(4+len));
+  for(let k=0;k<idx.length;k++){ const i=idx[k]; if(i<N){ if(heat[i]<=0) active[nActive++]=i; heat[i]=1; } }
+  updateUI(j);
+}
+
+function onCorpo(j, bytes){
+  corpoT=performance.now();
+  if(j.fmt==='pose'){
+    Corpo3D.quadro(j, bytes);
+    if(Corpo3D.estado.pronto){ $('corpoCv').classList.add('on'); $('corpoImg').classList.remove('on'); }
+  }else{
+    const img=$('corpoImg'); const url=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
+    img.onload=()=>{ if(corpoUrl) URL.revokeObjectURL(corpoUrl); corpoUrl=url; img.classList.add('on'); $('corpoCv').classList.remove('on'); };
+    img.src=url;
+  }
+  $('corpoModo').textContent=MODE_TEXT[j.mode]||''; $('corpoModo').className=j.mode||'';
+  rxCount++; const now=performance.now(); if(now-rxT0>=1000){ rxFps=Math.round(rxCount*1000/(now-rxT0)); rxCount=0; rxT0=now; }
+  $('corpoInfo').textContent=j.body_mode==='kinematic'
+    ?`NeuroMechFly body · ${j.realtime?'real time':(j.time_scale+'× speed')} · recorded fly leg trajectories, rhythm and direction from her neurons · takeoff on giant-fiber escape, wingbeat stylized · ${j.step_hz||0} steps/s · ${j.fps||0} fps sent, ${rxFps} received · drive ${(j.drive||[]).join(' / ')}`
+    :`NeuroMechFly body · physics · ${j.slowdown||'?'}× slow motion · ${j.steps_per_s||0} steps/s · drive ${(j.drive||[]).join(' / ')}`;
+}
+
+// cards do mercado: trade lido -> estimulo; ordem dela (papel); resumo com saldo e PnL
+function hora(t){ const d=new Date((t||0)*1000); return d.toTimeString().slice(0,8); }
+function onMercado(m){
+  if(m.classe==='resumo'){
+    $('mModo').textContent=m.modo;
+    const p=m.pnl_pct||0, cls=p>0?'up':(p<0?'down':'');
+    $('mResumo').innerHTML=`watching <b>${m.token}</b> · price <b>${(m.preco_eth||0).toExponential(2)} ETH</b> ($${(m.preco_usd||0).toPrecision(3)}) · 24h vol $${Math.round(m.vol_h24||0).toLocaleString()}<br>`
+      +`her wallet: <b>${(m.saldo_eth||0).toFixed(4)} ETH</b> + <b>${Math.round(m.tokens||0).toLocaleString()}</b> ${m.token} · value <b>${(m.valor_eth||0).toFixed(4)} ETH</b> · PnL <b class="${cls}">${p>0?'+':''}${p.toFixed(2)}%</b> · ${m.ordens||0} orders`
+      +(m.replay?`<br><span class="r">market quiet for ${Math.round((m.quieto_s||0)/60)} min · replaying older trades</span>`:'');
+    return;
+  }
+  const box=$('mCards'); const el=document.createElement('div');
+  if(m.classe==='trade'){
+    el.className='card '+m.kind;
+    el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.kind==='buy'?'BUY':'SELL'} $${(m.usd||0).toFixed(2)} by ${m.de||'?'} → <b>${m.estimulo}</b> ${m.ms} ms${m.extra?' + '+m.extra:''}${m.replay?' <span class="r">replay</span>':''}`;
+  }else if(m.classe==='ordem'){
+    el.className='card ordem '+m.lado;
+    el.innerHTML=`<span class="q">${hora(m.t)}</span> <b>SHE ${m.lado==='buy'?'BOUGHT':'SOLD'}</b> ${(m.eth||0).toFixed(4)} ETH @ ${(m.preco_eth||0).toExponential(2)} <span class="q">(${m.modo})</span><br><span class="r">${m.motivo||''}</span>`;
+  }else if(m.classe==='sinal'||m.classe==='info'){
+    el.className='card'; el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.texto||''}`;
+  }else return;
+  box.prepend(el); while(box.children.length>8) box.removeChild(box.lastChild);
+}
+
+function fmtLived(s){
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60), sec=(s%60);
+  return (h?h+'h ':'')+(h||m?m+'m ':'')+sec.toFixed(1)+'s';
+}
+
+function updateUI(j){
+  if(typeof j.rot==='number'){                 // sincroniza o relogio de rotacao com o servidor (suave)
+    rotSpeed=j.rot_speed||rotSpeed;
+    const dif=((j.rot-rotBase+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+    rotBase+=Math.abs(dif)>0.5?dif:dif*0.2;
+  }
+  $('sSpikes').textContent=Math.round(j.spikes_per_s).toLocaleString();
+  $('sLived').textContent=fmtLived(j.lived);
+  $('sRatio').textContent=j.ratio?j.ratio.toFixed(1)+'×':'–';
+  $('sSyn').textContent=(j.synapses_changed||0).toLocaleString();
+  $('sView').textContent=j.viewers;
+  $('sStim').textContent=j.stimuli.length?j.stimuli.join(', '):'none';
+  currentStimuli=j.stimuli;
+  $('sSeiz').textContent=(j.seizures||0).toLocaleString();
+  $('hstate').textContent=STATE_TEXT[j.state]||j.state;
+  $('hstate').className='sub '+(j.state||'');
+  setStatus('live',`live · ${Math.round(j.steps_per_s)} steps/s · ${j.idx_total.toLocaleString()} fired`);
+  for(const g of GROUPS){
+    const hz=j.dn[g[0]]||0; smooth[g[0]]=smooth[g[0]]*0.6+hz*0.4;
+    $('b_'+g[0]).style.width=Math.min(100,smooth[g[0]]/CAP_HZ*100)+'%';
+    $('e_'+g[0]).textContent=Math.round(smooth[g[0]])+' Hz';
+  }
+  document.querySelectorAll('#btns button[data-s]').forEach(b=>b.classList.toggle('on',j.stimuli.includes(b.dataset.s)));
+  regHist.push({c:j.regions,ms:j.brain_ms}); if(regHist.length>RATE_WINDOW) regHist.shift();
+  const ms=regHist.reduce((a,x)=>a+x.ms,0)||1;
+  for(const r of regions){ if(r.key==='unknown') continue;
+    const sum=regHist.reduce((a,x)=>a+(x.c[r.id]||0),0);
+    $('r_'+r.id).textContent=Math.round(sum/ms*1000).toLocaleString();
+  }
+}
+load().catch(e=>{ setStatus('off','failed to load brain data'); console.error(e); });
+</script>
+</body>
+</html>

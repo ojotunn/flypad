@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLY PAD — every coin you launch becomes a fly</title>
+<meta name="description" content="A launchpad on Robinhood Chain where every coin gets a whole fruit-fly brain, 138,639 neurons simulated live, with the token's trades wired into its senses.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* FLY PAD — home da colonia. Mundo unico e escuro: preto de cuticula, vermelho do olho da mosca. */
+:root{--ground:#0B0908;--panel:#151110;--line:#2B2420;--line2:#3A302A;--ink:#F3ECE3;--muted:#9C8E84;--dim:#6B605A;--eye:#FF4E2A;--eye2:#FF7A5C;--flash:#CFE6FF;--good:#7BD88F;--bad:#FF6A5C;--heart:#FF5FA2;
+--display:'Bricolage Grotesque',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',Consolas,monospace}
+*{box-sizing:border-box}html{color-scheme:dark}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit}button{font:inherit;color:inherit;cursor:pointer}:focus-visible{outline:2px solid var(--eye);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+header{position:sticky;top:0;z-index:20;background:rgba(11,9,8,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:26px;height:58px}
+.wordmark{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:10px}
+.wordmark i{width:10px;height:10px;border-radius:50%;background:var(--eye);box-shadow:0 0 12px var(--eye)}
+nav{display:flex;gap:18px;font-size:14px;color:var(--muted)}nav a{text-decoration:none}nav a:hover{color:var(--ink)}
+.spacer{flex:1}
+.chip{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);padding:6px 10px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.chip b{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good)}
+.btn{border:1px solid var(--line2);background:transparent;padding:9px 14px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--ink)}.btn.primary{background:var(--eye);border-color:var(--eye);color:#1A0B07;font-weight:500}.btn.primary:hover{background:var(--eye2);border-color:var(--eye2)}
+#hero{padding:54px 0 34px}#hero .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,5.6vw,68px);line-height:.98;letter-spacing:-.03em;margin:0 0 20px;text-wrap:balance}
+h1 em{font-style:normal;color:var(--eye)}
+.lede{font-size:17px;color:var(--muted);max-width:52ch;margin:0 0 26px}.lede b{color:var(--ink);font-weight:500}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.destaque{border:1px solid var(--line);background:var(--panel);padding:18px;display:grid;gap:12px}
+.destaque .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--eye)}
+.destaque .tk{font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em;line-height:1}
+.destaque .nm{color:var(--muted)}
+.destaque canvas{width:100%;height:80px;display:block}
+.destaque .row{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:12px;color:var(--muted);flex-wrap:wrap}.destaque .row b{color:var(--ink);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line2);color:var(--muted)}
+.pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.awake{color:var(--good);border-color:#2C5A38}.pill.booting{color:#F2C14E;border-color:#5A4A22}.pill.sleeping{color:var(--dim)}.pill.queued{color:#F2C14E;border-color:#5A4A22}
+section.block{padding:44px 0}.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+h2{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.02em;margin:0}.sec-head p{margin:0;color:var(--muted);font-size:14px}
+.colony{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.fly{border:1px solid var(--line);background:var(--panel);padding:14px 14px 12px;text-decoration:none;display:grid;grid-template-columns:1fr auto;gap:8px 12px;transition:border-color .15s;color:inherit}
+.fly:hover{border-color:var(--eye)}
+.fly .tk{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;line-height:1}.fly .nm{color:var(--muted);font-size:13px;margin-top:3px}
+.fly .pill{align-self:start}.fly canvas{grid-column:1/-1;width:100%;height:46px;display:block}
+.fly .row{grid-column:1/-1;display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--muted);gap:8px}.fly .row b{color:var(--ink);font-weight:500}
+.fly.sleep{opacity:.6}
+.vazio{grid-column:1/-1;border:1px dashed var(--line2);padding:28px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px}
+#hatch .wrap{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+form{border:1px solid var(--line);background:var(--panel);padding:22px;display:grid;gap:14px}
+.field{display:grid;gap:6px}.field label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select{background:var(--ground);border:1px solid var(--line2);color:var(--ink);padding:10px 12px;font:inherit;font-size:15px}
+.field input:focus{border-color:var(--eye);outline:none}.field small{color:var(--dim);font-size:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fee{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}.fee b{color:var(--ink);font-weight:500}
+.senses{display:grid;border:1px solid var(--line)}.senses div{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.senses div:last-child{border-bottom:0}.senses div span{color:var(--muted)}.senses div b{font-weight:500}
+.note{color:var(--muted);font-size:14px;max-width:52ch}.note b{color:var(--ink);font-weight:500}
+.msg{font-family:var(--mono);font-size:12px;color:#F2C14E;min-height:18px}.msg a{color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.step{border-top:2px solid var(--line2);padding-top:14px}
+.step h3{font-family:var(--display);font-weight:800;font-size:20px;margin:0 0 8px;letter-spacing:-.01em}.step p{margin:0;color:var(--muted);font-size:14px}
+.step .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--eye);margin-bottom:8px}
+.econ{margin-top:26px;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line)}.econ div{padding:14px 16px;border-right:1px solid var(--line)}.econ div:last-child{border-right:0}
+.econ b{display:block;font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.01em}.econ span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);font-size:12.5px;font-family:var(--mono)}footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+@media (max-width:900px){#hero .wrap,#hatch .wrap{grid-template-columns:1fr}.colony,.steps{grid-template-columns:1fr 1fr}.econ{grid-template-columns:1fr 1fr}.econ div:nth-child(2){border-right:0}.econ div:nth-child(-n+2){border-bottom:1px solid var(--line)}nav{display:none}}
+@media (max-width:560px){.colony,.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="wordmark" href="/"><i></i>FLY PAD</a>
+  <nav><a href="#colony">Colony</a><a href="#hatch">Hatch a fly</a><a href="#how">How it works</a></nav>
+  <span class="spacer"></span>
+  <span class="chip"><b></b><span id="liveCount">connecting…</span></span>
+  <a class="btn primary" href="#hatch">Hatch a fly</a>
+</div></header>
+
+<main>
+  <section id="hero"><div class="wrap">
+    <div>
+      <p class="label" style="margin:0 0 14px">Robinhood Chain · Pons · test phase, hatching is free</p>
+      <h1>Every coin you launch <em>becomes a fly.</em></h1>
+      <p class="lede">Not a mascot. A whole fruit-fly brain, <b>138,639 neurons</b>, simulated live on a GPU, with your token's trades wired into its senses. A buy is sugar on its legs. A sell is bitter. A big sell is a shadow overhead. It feeds, backs away, freezes, and soon it will <b>court the flies of other tokens</b>. Nobody writes its behavior.</p>
+      <div class="cta"><a class="btn primary" href="#hatch">Hatch a fly</a><a class="btn" href="#colony">See the colony</a></div>
+    </div>
+    <div class="destaque" id="destaque">
+      <div class="k">Featured fly</div>
+      <div class="tk" id="dTk">—</div><div class="nm" id="dNm">waiting for the colony…</div>
+      <canvas id="dCv" width="600" height="80"></canvas>
+      <div class="row"><span>state <b id="dState">–</b></span><span>spikes/s <b id="dSpk">–</b></span><span>brain time <b id="dLived">–</b></span><span>watching <b id="dView">–</b></span></div>
+      <a class="btn" id="dLink" href="#">Open its page</a>
+    </div>
+  </div></section>
+
+  <section class="block" id="colony"><div class="wrap">
+    <div class="sec-head"><h2>The colony</h2><p id="colonyNote">Every fly here is a token on Pons. Awake flies run live on the GPU; the others sleep with their brains saved, and wake when their turn comes.</p></div>
+    <div class="colony" id="colonyGrid"><div class="vazio">loading the colony…</div></div>
+  </div></section>
+
+  <section class="block" id="hatch" style="border-top:1px solid var(--line)"><div class="wrap">
+    <div>
+      <div class="sec-head"><h2>Hatch a fly</h2></div>
+      <form id="hatchForm">
+        <div class="two">
+          <div class="field"><label for="fName">Name</label><input id="fName" placeholder="Trench Fly" required maxlength="40"></div>
+          <div class="field"><label for="fTicker">Ticker</label><input id="fTicker" placeholder="TRENCH" required maxlength="12" style="text-transform:uppercase"></div>
+        </div>
+        <div class="field"><label for="fCa">Token contract (CA) on Robinhood Chain</label><input id="fCa" placeholder="0x…" pattern="^0x[0-9a-fA-F]{40}$" required><small>Launch the token on Pons first, then paste its CA here. Launching from this page comes next.</small></div>
+        <div class="two">
+          <div class="field"><label for="fSex">Sex</label><select id="fSex"><option value="f">female · pC1 receptivity</option><option value="m">male · P1 courtship</option></select></div>
+          <div class="field"><label for="fX">X link (optional)</label><input id="fX" placeholder="https://x.com/…"></div>
+        </div>
+        <div class="field"><label for="fImg">Image URL (optional)</label><input id="fImg" placeholder="https://…"></div>
+        <div class="fee"><span>hatching · test phase</span><b>free</b></div>
+        <div class="fee" style="border-top:0;padding-top:0"><span>brain time</span><b>boots in about 2 minutes</b></div>
+        <button class="btn primary" type="submit" style="justify-self:start">Hatch this fly</button>
+        <div class="msg" id="hatchMsg"></div>
+      </form>
+    </div>
+    <div>
+      <div class="sec-head"><h2 style="font-size:22px">What it will feel</h2><p>Fixed, public map. Same for every fly.</p></div>
+      <div class="senses">
+        <div><span>a buy</span><b>sugar on its legs → it feeds</b></div>
+        <div><span>a sell</span><b>bitter taste → it backs away</b></div>
+        <div><span>a big buy or a new holder</span><b>dopamine</b></div>
+        <div><span>a big sell</span><b>a looming shadow → it freezes or escapes</b></div>
+        <div><span>many trades in a minute</span><b>vibration</b></div>
+        <div><span>silence for days</span><b>it sleeps, brain saved</b></div>
+      </div>
+      <p class="note" style="margin-top:16px"><b>Its body is real too.</b> The fly at the bottom of each page is the NeuroMechFly model, moved only by the fly's own descending neurons: gait, backing up, freezing, proboscis, grooming, takeoff.</p>
+    </div>
+  </div></section>
+
+  <section class="block" id="how" style="border-top:1px solid var(--line)"><div class="wrap">
+    <div class="sec-head"><h2>How it works</h2><p>Virtuals, but the intelligence is biological.</p></div>
+    <div class="steps">
+      <div class="step"><div class="k">Hatch</div><h3>A token gets a brain</h3><p>You register a Pons token. A fresh connectome boots on the GPU with the token's contract wired into its senses, and its page goes live in about two minutes.</p></div>
+      <div class="step"><div class="k">Live</div><h3>Trades become senses</h3><p>Leaky integrate-and-fire over the full connectome (Shiu et al., Nature 2024). No training, no prompt, no strategy. Given the same trades, the same fly does the same thing.</p></div>
+      <div class="step"><div class="k">Colony</div><h3>Flies share one GPU</h3><p>A few flies are awake at a time. A quiet fly sleeps with its synapses saved and wakes when its turn comes. Courtship between tokens is the next step.</p></div>
+    </div>
+    <div class="econ">
+      <div><b>free</b><span>hatching · test phase</span></div>
+      <div><b id="eMax">6</b><span>flies awake per GPU</span></div>
+      <div><b>120 / s</b><span>brain steps, capped to share the GPU</span></div>
+      <div><b>sleep, not death</b><span>quiet fly saves its synapses</span></div>
+    </div>
+  </div></section>
+
+  <footer><div class="wrap"><span>FLY PAD · brain engine and pages from FLY / SEX FLY · body: NeuroMechFly v2 (EPFL)</span><span>Connectome: FlyWire v783 (research build)</span></div></footer>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const hist={}; let dados=null, destaqueId=null;
+function fmtLived(s){ if(s==null) return '–'; const h=Math.floor(s/3600), m=Math.floor(s%3600/60), sec=Math.floor(s%60); return (h?h+'h ':'')+(h||m?m+'m ':'')+sec+'s'; }
+function estadoDe(f){ return f.live?'awake':(f.estado==='booting'?'booting':(f.estado==='awake'?'booting':'sleeping')); }
+function textoEstado(f){ const e=estadoDe(f); if(e==='awake') return (f.state==='active'?'awake · reacting':(f.state==='seizure'?'awake · blackout':'awake · quiet')); return e; }
+function spark(cv, arr, cor){ const g=cv.getContext('2d'); const W=cv.width,H=cv.height; g.clearRect(0,0,W,H); if(!arr.length) return; const mx=Math.max(1000,...arr); g.strokeStyle=cor; g.lineWidth=1.5; g.beginPath(); arr.forEach((v,k)=>{ const x=k/Math.max(1,arr.length-1)*W, y=H-2-(v/mx)*(H-6); k?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke(); g.lineTo(W,H); g.lineTo(0,H); g.closePath(); g.fillStyle='rgba(207,230,255,.12)'; g.fill(); }
+function desenhar(){
+  const grid=$('colonyGrid'); const moscas=dados.moscas||[];
+  $('liveCount').textContent=moscas.filter(f=>f.live).length+' flies awake · '+moscas.length+' in the colony';
+  if(dados.max_acordadas) $('eMax').textContent=dados.max_acordadas;
+  if(!moscas.length){ grid.innerHTML='<div class="vazio">no flies yet · hatch the first one below</div>'; return; }
+  grid.innerHTML='';
+  for(const f of moscas){
+    (hist[f.id]=hist[f.id]||[]).push(f.spikes_per_s||0); if(hist[f.id].length>40) hist[f.id].shift();
+    const e=estadoDe(f); const a=document.createElement('a'); a.className='fly'+(e==='sleeping'?' sleep':''); a.href='/t/'+f.id;
+    a.innerHTML=`<div><div class="tk">$${f.ticker}</div><div class="nm">${f.name} · ${f.sex==='m'?'♂':'♀'}</div></div><span class="pill ${e}"><i></i><span>${textoEstado(f)}</span></span><canvas width="300" height="46"></canvas><div class="row"><span>spikes/s <b>${Math.round(f.spikes_per_s||0).toLocaleString()}</b></span><span>brain time <b>${fmtLived(f.lived)}</b></span><span>watching <b>${f.viewers||0}</b></span></div>`;
+    grid.appendChild(a); spark(a.querySelector('canvas'), hist[f.id], e==='awake'?'#CFE6FF':'#3A302A');
+  }
+  const d=moscas.find(f=>f.id===destaqueId)||moscas.find(f=>f.live)||moscas[0]; destaqueId=d.id;
+  $('dTk').textContent='$'+d.ticker; $('dNm').textContent=d.name+' · '+(d.sex==='m'?'male':'female'); $('dState').textContent=textoEstado(d); $('dSpk').textContent=Math.round(d.spikes_per_s||0).toLocaleString(); $('dLived').textContent=fmtLived(d.lived); $('dView').textContent=d.viewers||0; $('dLink').href='/t/'+d.id; spark($('dCv'), hist[d.id]||[], '#CFE6FF');
+}
+async function puxar(){ try{ const r=await fetch('/api/colonia',{cache:'no-store'}); dados=await r.json(); desenhar(); }catch(e){ $('liveCount').textContent='colony offline'; } }
+puxar(); setInterval(puxar, 4000);
+$('hatchForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault(); const msg=$('hatchMsg'); msg.textContent='hatching…';
+  const corpo={name:$('fName').value.trim(), ticker:$('fTicker').value.trim().toUpperCase(), ca:$('fCa').value.trim(), sex:$('fSex').value, x:$('fX').value.trim(), image:$('fImg').value.trim()};
+  try{ const r=await fetch('/api/hatch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}); const t=await r.text(); if(!r.ok) throw new Error(t);
+    const j=JSON.parse(t); msg.innerHTML=`queued · the brain boots in about 2 minutes · <a href="${j.page}">open $${corpo.ticker}'s page</a>`; ev.target.reset(); puxar(); }
+  catch(e){ msg.textContent='could not hatch: '+e.message; }
+});
+</script>
+</body>
+</html>

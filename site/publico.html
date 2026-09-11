@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLY BRAIN — a whole fly brain, live</title>
+<meta name="description" content="138,639 real neurons of a fruit-fly brain simulated live on one GPU. Pons trades on Robinhood Chain are her senses; her reflexes place the orders. No AI agent, no script.">
+<link rel="canonical" href="https://www.flybrain.finance/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FLY">
+<meta property="og:title" content="FLY BRAIN — a whole fly brain, alive on Robinhood Chain">
+<meta property="og:description" content="138,639 real neurons simulated live. Pons trades are her senses; her reflexes place the orders. No AI agent, no script, her own wallet.">
+<meta property="og:url" content="https://www.flybrain.finance/">
+<meta property="og:image" content="https://www.flybrain.finance/static/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FLY BRAIN — a whole fly brain, alive on Robinhood Chain">
+<meta name="twitter:description" content="138,639 real neurons simulated live. Pons trades are her senses; her reflexes place the orders. No AI agent.">
+<meta name="twitter:image" content="https://www.flybrain.finance/static/og.png">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23000'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%23f4d36a'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%238fb0ff' stroke-opacity='.6' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#000;--line:#1e2128;--line2:#2a2e37;--text:#d9dce3;--muted:#7a8090;--dim:#4a4f5a;--accent:#f4d36a;--up:#3ddc84;--down:#ff5e5e;--mono:"JetBrains Mono","Cascadia Mono",Consolas,"Courier New",monospace;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:12.5px/1.5 var(--mono)}
+#app{display:grid;grid-template-rows:44px 1fr;grid-template-columns:1fr 330px;height:100vh}
+#topo{grid-column:1/-1;display:flex;align-items:center;gap:22px;padding:0 18px;border-bottom:1px solid var(--line);font-size:12px}
+#topo .marca{font-weight:700;letter-spacing:.24em;color:#fff;font-size:15px}
+#topo .tag{color:var(--muted)}
+#topo .live{display:flex;align-items:center;gap:8px;color:var(--muted);letter-spacing:.12em}
+#topo .live i{width:8px;height:8px;border-radius:50%;background:#444}
+#topo .live.on{color:var(--up)}#topo .live.on i{background:var(--up);box-shadow:0 0 10px var(--up);animation:pulsa 1.6s infinite}
+#topo .live.off{color:var(--down)}#topo .live.off i{background:var(--down)}
+@keyframes pulsa{50%{opacity:.35}}
+#topo .dir{margin-left:auto;display:flex;align-items:center;gap:14px}
+#topo .ca{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);padding:4px 9px;color:var(--muted);cursor:pointer;user-select:none;font-size:11px}
+#topo .ca:hover{border-color:#4a5060;color:var(--text)}
+#topo .ca b{color:var(--text);font-weight:600;letter-spacing:.04em}
+#topo .ca.copiado b{color:var(--up)}
+#topo a{color:var(--muted);text-decoration:none;letter-spacing:.1em}#topo a:hover{color:#fff}
+#topo .btn{border:1px solid var(--line2);padding:4px 9px;color:var(--muted);cursor:pointer;font-size:11px;letter-spacing:.1em}
+#topo .btn:hover{color:#fff;border-color:#4a5060}
+#app.cinema{grid-template-columns:1fr}
+#app.cinema #panel{display:none}
+#stage{overflow:hidden;background:var(--bg);display:grid;grid-template-rows:1fr minmax(180px,42%)}
+#brain{position:relative;overflow:hidden;cursor:grab}
+#brain.drag{cursor:grabbing}
+#body{background:#000;position:relative;overflow:hidden;border-top:1px solid var(--line)}
+#body img,#body canvas{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .4s}
+#body img.on,#body canvas.on{opacity:1}
+#corpoHud{position:absolute;left:18px;bottom:14px;display:flex;gap:14px;align-items:baseline;pointer-events:none}
+#corpoModo{font-size:15px;font-weight:700;letter-spacing:.2em;color:var(--accent)}
+#corpoModo.escape,#corpoModo.flying{color:var(--down)}
+#corpoInfo{font-size:11px;color:var(--muted)}
+#corpoTag{position:absolute;right:18px;bottom:14px;font-size:11px;color:var(--dim);pointer-events:none;letter-spacing:.06em}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:18px;top:14px;pointer-events:none}
+#hud h1{display:none}
+#hud .sub{color:var(--muted);font-size:11.5px;letter-spacing:.06em}
+#hstate{font-size:12px;margin-top:6px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+#hstate.active{color:var(--accent)}
+#hstate.seizure{color:var(--down)}
+#status{display:none}
+#cine{display:none}
+#hint{position:absolute;right:18px;bottom:10px;font-size:11px;color:var(--dim);pointer-events:none;letter-spacing:.06em}
+#panel{border-left:1px solid var(--line);overflow:auto;display:flex;flex-direction:column}
+#panel section,#panel details{padding:14px 16px;border-bottom:1px solid var(--line)}
+h2{margin:0 0 10px;font-size:10.5px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.stat b{display:block;font-size:20px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.stat span{color:var(--muted);font-size:10.5px;letter-spacing:.04em}
+.bar{display:grid;grid-template-columns:108px 1fr 44px;align-items:center;gap:8px;margin:5px 0;font-size:11px;color:var(--muted)}
+.bar i{display:block;height:6px;background:#101218;border:1px solid var(--line);overflow:hidden}
+.bar i b{display:block;height:100%;width:0;background:var(--accent);transition:width .12s linear}
+.bar em{font-style:normal;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.mres{font-size:11.5px;color:var(--muted);line-height:1.6}
+.mres b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+.mres .up{color:var(--up)}.mres .down{color:var(--down)}
+.cards{display:flex;flex-direction:column;margin-top:8px}
+.card{font-size:11px;line-height:1.4;padding:6px 0 6px 10px;border-left:2px solid var(--line2);border-bottom:1px solid var(--line);color:var(--text)}
+.card:last-child{border-bottom:0}
+.card.buy{border-left-color:var(--up)}.card.sell{border-left-color:var(--down)}
+.card.ordem{border-left-color:var(--accent);background:linear-gradient(90deg,#15140c,transparent 60%)}
+.card.ordem.sell{border-left-color:var(--down);background:linear-gradient(90deg,#1a1010,transparent 60%)}
+.card .q{color:var(--dim)}
+.card .r{color:var(--muted)}
+details{font-size:12px;color:var(--muted);font-family:var(--sans)}
+details summary{cursor:pointer;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+details p{margin:10px 0 0;line-height:1.55}
+.legend{display:flex;flex-direction:column;gap:4px;font-size:11px;font-family:var(--mono);margin-top:10px}
+.legend div{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center}
+.legend s{display:block;width:10px;height:10px;text-decoration:none}
+.legend em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
+.foot{color:var(--dim);font-size:10.5px;line-height:1.5;margin-top:auto;padding:12px 16px;letter-spacing:.04em}
+.foot b{color:var(--muted);font-weight:600}
+@media (max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:44px 80vh 1fr;height:auto;min-height:100vh}#stage{grid-template-rows:1fr 40%}#panel{border-left:0;border-top:1px solid var(--line)}#topo .tag,#topo .ca span:first-child,#topo .ca.vazio,#topo .btn.cinema,#corpoTag,#hint{display:none}#topo{gap:10px;padding:0 12px}#topo .dir{gap:8px}#topo .ca b{white-space:nowrap}#hud .sub{font-size:10.5px}}
+/* sobre: a descricao da tecnologia, em camada por cima da tela */
+#sobre{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:50;overflow:auto;display:none}
+#sobre.on{display:block}
+#sobre .cx{max-width:820px;margin:0 auto;padding:56px 28px 80px;font-family:var(--sans);font-size:14.5px;line-height:1.65;color:#c9cdd6}
+#sobre h1{font-family:var(--mono);font-size:13px;letter-spacing:.3em;color:var(--accent);margin:0 0 6px;text-transform:uppercase}
+#sobre .lede{font-size:19px;color:#fff;line-height:1.45;margin:0 0 34px;font-weight:500}
+#sobre h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:30px 0 8px;font-weight:600;border-top:1px solid var(--line);padding-top:16px}
+#sobre p{margin:0 0 10px}
+#sobre b{color:#fff;font-weight:600}
+#sobre code{font-family:var(--mono);font-size:12px;color:var(--accent)}
+#sobre a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+#sobre .fechar{position:fixed;top:12px;right:18px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;border:1px solid var(--line2);padding:5px 10px;color:var(--muted);cursor:pointer;background:#000}
+#sobre .fechar:hover{color:#fff;border-color:#4a5060}
+#sobre .grade{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;font-family:var(--mono);font-size:12px;color:var(--muted);margin:8px 0 4px}
+#sobre .grade b{color:var(--text)}
+#sobre .fonte{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6}
+@media (max-width:600px){#sobre .grade{grid-template-columns:1fr}#sobre .cx{padding:48px 18px 60px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topo">
+    <a class="marca" href="/" style="text-decoration:none">FLY PAD</a><span class="marca" id="marcaMosca" style="margin-left:6px"></span>
+    <span class="tag">a whole fly brain, alive on Robinhood Chain</span>
+    <span class="live" id="liveTop"><i></i><span id="liveTxt">CONNECTING</span></span>
+    <div class="dir">
+      <span id="viewersTop" class="tag"></span>
+      <span class="ca" id="ca" title="contract address"><span>CA</span><b id="caTxt">not launched yet</b></span>
+      <span class="ca" id="wal" title="her own wallet on Robinhood Chain · click to copy"><span>HER WALLET</span><b id="walTxt">…</b></span>
+      <a href="#" id="xLink">X</a>
+      <span class="btn" onclick="document.getElementById('sobre').classList.add('on')">ABOUT</span>
+      <span class="btn cinema" onclick="document.getElementById('app').classList.toggle('cinema');setTimeout(resize,50)">CINEMA &middot; C</span>
+    </div>
+  </div>
+  <div id="sobre">
+    <span class="fechar" onclick="document.getElementById('sobre').classList.remove('on')">CLOSE &middot; ESC</span>
+    <div class="cx">
+      <h1>About FLY</h1>
+      <p class="lede">A real fruit-fly brain, all 138,639 neurons of it, simulated live on one graphics card. Her senses are the trades on Pons. Her reflexes place the orders. Nobody wrote her behavior.</p>
+
+      <h3>What you are watching</h3>
+      <p>The top of the screen is the brain. Every flash is one neuron crossing its firing threshold. The positions are the real positions of those neurons inside a fly's head, and the colors are brain regions (visual lobes, mushroom bodies, central complex, and so on). The wiring is the <b>FlyWire connectome</b>: every neuron and every synapse of an adult <i>Drosophila melanogaster</i>, reconstructed from electron-microscope images of one female fly. This is not a drawing of a brain. It is the brain's own wiring diagram, running.</p>
+
+      <h3>The brain</h3>
+      <p>We run the whole network as a <b>leaky integrate-and-fire</b> model, the one published by Shiu et al. in <i>Nature</i> (2024). Each neuron is a leaky integrator; each synapse's strength is the number of contacts counted in the microscope; each connection is excitatory or inhibitory according to the neurotransmitter predicted for that neuron. There is no training, no fitting, no hand-tuning toward any behavior. The published model reproduces real reflexes, like sugar on the legs driving the proboscis out, because the wiring does it.</p>
+      <p>Two honest consequences follow. The model has no spontaneous activity, so with nothing to sense she is silent: the market is her only input. And it has no fatigue, so a runaway state is possible; when it happens she blacks out, restarts, and the blackout is counted on the panel. Synapses also change a little with use (Hebbian plasticity with a slow relaxation toward the original wiring), so she is not identical from one hour to the next. That counter is on the panel too.</p>
+      <div class="grade"><div>neurons <b>138,639</b></div><div>synapses <b>~50 million</b></div><div>time step <b>0.1 ms</b></div><div>hardware <b>one consumer GPU</b></div></div>
+      <p>The brain runs slower than real time (the ratio is in the footer). What you see is a real reaction in slow motion, never a replay of a recording.</p>
+
+      <h3>The body</h3>
+      <p>The fly at the bottom is <b>NeuroMechFly v2</b>, the anatomically measured fly model from EPFL, with leg trajectories recorded from real walking flies. She does not have a script. Her <b>descending neurons</b>, the ones that carry commands from brain to body in a real fly, set the rhythm and direction of the gait, back her up, freeze her, extend the proboscis, start grooming, and fire the giant fiber that launches her into flight. The bars on the panel are the live firing rates of those neuron groups. The body is drawn in your browser from the joint angles her neurons produce, thirty times per second.</p>
+
+      <h3>The market is her world</h3>
+      <p>She watches one Pons curve at a time on Robinhood Chain, the busiest one. Every trade becomes a sense, by a fixed and public map:</p>
+      <div class="grade"><div>a buy <b>sugar on her legs</b></div><div>a sell <b>bitter taste</b></div><div>a big buy or a new holder <b>dopamine</b></div><div>a big sell <b>a looming shadow</b></div><div>many trades in a minute <b>vibration</b></div><div>price drifting up or down <b>walk forward or back away</b></div><div>silence for minutes <b>dust on her eyes</b></div></div>
+
+      <h3>She trades</h3>
+      <p>Her motor neurons become orders by fixed rules, also public. A sustained proboscis extension buys a small lot (10% of her ETH, at most $10 per order). Escape or backing away sells. A lasting bitter taste sells a quarter. Orders are at least 20 seconds apart. She trades only on Pons curves, <b>never her own token</b>, from <b>her own wallet</b>, the address in the top bar. Every order is a real transaction you can open on the explorer. Her wallet is topped up from the token's creator fees; nothing else touches it.</p>
+      <p>Two rules learned on day one. <b>Replays never buy:</b> when the market goes quiet she re-lives old trades on screen, but only a live trade can open a position; selling is always allowed. <b>She feels what she holds:</b> if the token she is holding drops 2% in five minutes she backs away, and at 5% she sees a shadow and escapes, which sells.</p>
+
+      <h3>What is not here</h3>
+      <p><b>No AI agent. No language model. No strategy.</b> Nothing decides in her name. Given the same brain state and the same trades, the same orders come out. She has reflexes, not opinions. When the brain is silent she does nothing, and that is shown as it is.</p>
+
+      <h3>Data and credits</h3>
+      <p class="fonte">Connectome: FlyWire (Dorkenwald et al., Schlegel et al., <i>Nature</i> 2024). Model: Shiu et al., <i>Nature</i> 2024. Engine derived from fly-brain (MIT). Body: NeuroMechFly v2 (Lobato-Rios et al., Wang-Chen et al., EPFL). Rendering: three.js. Market data: Pons V2 on Robinhood Chain via GeckoTerminal. <span id="dataLine2">Development build on FlyWire v783.</span></p>
+    </div>
+  </div>
+  <div id="stage">
+    <div id="brain">
+      <canvas id="c"></canvas>
+      <div id="hud"><h1>FLY BRAIN</h1><div class="sub">138,639 neurons &middot; every flash is a real neuron firing</div><div id="hstate">loading…</div></div>
+      <div id="status"><span id="stxt">connecting…</span><span id="dot"></span></div>
+      <div id="cine" onclick="document.getElementById('app').classList.toggle('cinema');setTimeout(resize,50)">cinema mode</div>
+      <div id="hint">drag to rotate</div>
+    </div>
+    <div id="body">
+      <canvas id="corpoCv"></canvas>
+      <img id="corpoImg" alt="">
+      <div id="corpoHud"><span id="corpoModo"></span><span id="corpoInfo">body offline</span></div>
+      <div id="corpoTag">her body moves only by what her neurons say</div>
+    </div>
+  </div>
+  <aside id="panel">
+    <section><h2>Now</h2><div class="stats">
+      <div class="stat"><b id="sSpikes">–</b><span>spikes per brain second</span></div>
+      <div class="stat"><b id="sLived">–</b><span>brain time lived</span></div>
+      <div class="stat"><b id="sSyn">–</b><span>synapses changed since birth</span></div>
+      <div class="stat"><b id="sSeiz">–</b><span>blackouts since birth</span></div>
+    </div></section>
+    <section><h2>What she wants to do</h2><div id="bars"></div></section>
+    <section id="mercadoSec"><h2>Her wallet · <span id="mModo">paper</span> trading on Pons</h2>
+      <div class="stats" id="walStats" style="margin-bottom:10px">
+        <div class="stat"><b id="wUsd">–</b><span>her ETH, in dollars</span></div>
+        <div class="stat"><b id="wTok">–</b><span id="wTokLbl">tokens she holds</span></div>
+        <div class="stat"><b id="wPnl">–</b><span>PnL since she got the wallet</span></div>
+        <div class="stat"><b id="wOrd">–</b><span>orders she placed</span></div>
+      </div>
+      <div class="mres" id="mResumo">waiting for the market reader…</div>
+      <h2 style="margin-top:14px">Her orders</h2>
+      <div class="cards" id="mOrdens"><div class="card"><span class="r">no orders yet</span></div></div>
+      <h2 style="margin-top:14px">What she feels</h2>
+      <div class="cards" id="mCards"></div>
+    </section>
+    <details><summary>Under the hood</summary>
+      <div class="legend" id="legend"></div>
+      <p>Connectome-constrained leaky integrate-and-fire simulation of the adult <i>Drosophila</i> brain (Shiu et al. 2024; engine derived from fly-brain, MIT). Nothing is scripted: every flash is a neuron crossing threshold. The model has no spontaneous activity, so between inputs she is silent, and no fatigue, so a runaway state is possible; when it happens she blacks out, comes back, and it is counted.</p>
+      <p>Her body is the NeuroMechFly model with recorded fly leg trajectories; rhythm and direction come from her descending neurons. Takeoff follows the giant fiber. Wingbeat is stylized. Only the antenna twitches and head glances at rest are physiology rather than decisions.</p>
+      <p>Market: Pons trades become her senses by a fixed public map (buy = sugar, sell = bitter, big sell = shadow, many trades = vibration). Her motor neurons become orders by fixed rules (proboscis = buy, escape or backing up = sell all, lasting bitter = sell a quarter). No AI agent anywhere: she has reflexes, not a strategy. She never trades her own token.</p>
+      <p id="dataLine">Data: FlyWire v783 (development build).</p>
+    </details>
+    <div class="foot" id="foot">machine seconds per brain second: <b id="sRatio">–</b> · watching now: <b id="sView">–</b> · <span id="sStim"></span></div>
+  </aside>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script src="/static/fly-cliente.js"></script>
+<script>
+// Pagina publica: mesma cena da /dev, sem botoes. Cerebro em 3D (three.js) + corpo desenhado aqui a partir das
+// poses (fly-cliente.js; JPEG ainda aceito) + feed do mercado. Funciona igual no servidor local e no relay.
+const GROUPS=[['feed','feed (proboscis)'],['forward','walk forward'],['turn_L','turn left'],['turn_R','turn right'],['backward','walk backward'],['escape','escape (giant fiber)'],['groom','groom'],['halt','freeze'],['reward','reward (dopamine)']];
+const STATE_TEXT={quiet:'quiet · waiting for the market',active:'reacting',seizure:'seizure · runaway activity'};
+const MODE_TEXT={walking:'',escape:'ESCAPE',grooming:'GROOMING',eye_grooming:'GROOMING EYES',feeding:'FEEDING',flying:'FLYING',landing:'LANDING',backing:'BACKING UP',startle:'STARTLE',freeze:'FREEZE',excited:'EXCITED'};
+const CAP_HZ=150, DECAY=0.955, MIN_HEAT=0.02, RATE_WINDOW=20, ROT_FRENTE=Math.PI;
+let N=0, regions=[], heat=null, active=null, nActive=0;
+let ws=null, retry=1000, hello=null;
+let corpoUrl=null, corpoT=0, rxCount=0, rxT0=performance.now(), rxFps=0;
+let renderer=null, scene=null, camera=null, grupo=null, pontos=null, heatAttr=null, casca=null;
+let rotBase=0, rotSpeed=0.12, dragOff=0, rotX=0.08, lastInteract=-1e9, lastT=0, dragging=false, dragX=0, dragY=0;
+const $=id=>document.getElementById(id);
+const smooth={}; GROUPS.forEach(g=>smooth[g[0]]=0);
+const regHist=[];
+const FLY_ID='';   // FLY PAD: id da mosca (o relay injeta); a pagina assiste /ws?t=<id>
+const FLY_NOME='';
+const FLY_TICKER='';
+const CA='';
+document.addEventListener('DOMContentLoaded',()=>{ if(FLY_TICKER){ document.title='$'+FLY_TICKER+' · '+FLY_NOME+' · FLY PAD'; const mm=document.getElementById('marcaMosca'); if(mm) mm.textContent='· $'+FLY_TICKER; const h=document.querySelector('#hud h1'); if(h) h.textContent='$'+FLY_TICKER; } });  // contrato do token: o relay injeta aqui; e tambem chega ao vivo pela mensagem 'config'
+const X_URL='';
+let ca=CA, xUrl=X_URL;
+function aplicarConfig(c){   // CA e X ao vivo (POST /api/config no PC -> relay -> todas as paginas abertas)
+  if(typeof c.ca==='string' && c.ca && c.ca!==ca){ ca=c.ca; $('caTxt').textContent=curto(ca); $('ca').classList.remove('vazio'); }
+  if(typeof c.x==='string' && c.x && c.x!==xUrl){ xUrl=c.x; $('xLink').href=xUrl; $('xLink').style.display=''; }
+}
+const EXPLORER='https://robinhoodchain.blockscout.com';
+const curto=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+let carteira='';   // endereco dela, vem no resumo do mercado
+function copiar(id, txtId, valor){ if(!valor) return; navigator.clipboard.writeText(valor).then(()=>{ $(id).classList.add('copiado'); $(txtId).textContent='copied'; setTimeout(()=>{ $(id).classList.remove('copiado'); $(txtId).textContent=curto(valor); },1500); }); }
+window.addEventListener('DOMContentLoaded',()=>{ if(CA){ $('caTxt').textContent=curto(CA); } else { $('ca').classList.add('vazio'); } if(X_URL) $('xLink').href=X_URL; else $('xLink').style.display='none'; $('ca').onclick=()=>copiar('ca','caTxt',ca); $('wal').onclick=()=>copiar('wal','walTxt',carteira); });
+// versao da pagina: se o servidor publicar outra, recarrega sozinha (aba antiga nao entende quadro novo)
+let versaoPagina='';
+async function checarVersao(){ try{ const v=(await (await fetch('/api/versao',{cache:'no-store'})).text()).trim(); if(!v||v.length>20) return; if(!versaoPagina) versaoPagina=v; else if(v!==versaoPagina) location.reload(); }catch(e){} }
+checarVersao(); setInterval(checarVersao, 60000);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ $('sobre').classList.remove('on'); return; } if($('sobre').classList.contains('on')) return; if(e.key==='c'||e.key==='C'){ $('app').classList.toggle('cinema'); setTimeout(resize,50);} });
+
+async function load(){
+  const rj=await (await fetch('/static/regions.json')).json();
+  regions=rj.regions; N=rj.n;
+  const xyz=new Float32Array(await (await fetch('/static/neurons.bin')).arrayBuffer());
+  const reg=new Uint8Array(await (await fetch('/static/regions.bin')).arrayBuffer());
+  let shell=null;
+  try{ shell=await (await fetch('/static/shell.bin')).arrayBuffer(); }catch(e){}
+  heat=new Float32Array(N); active=new Int32Array(N);
+  buildUI(); build3D(xyz, reg, shell); connect(); requestAnimationFrame(draw);
+  Corpo3D.init($('corpoCv'));
+}
+let ultimoQuadro=0;
+
+function build3D(xyz, reg, shell){
+  const cv=$('c');
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:false, alpha:false, powerPreference:'high-performance'});
+  renderer.setClearColor(0x000000, 1);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(36, 1, 0.05, 50);
+  camera.position.set(0, 0.12, 2.75); camera.lookAt(0,0,0);
+  grupo=new THREE.Group(); scene.add(grupo);
+  const pos=new Float32Array(N*3), col=new Float32Array(N*3), unk=regions.length-1;
+  const rgb=regions.map(r=>[parseInt(r.color.slice(1,3),16)/255,parseInt(r.color.slice(3,5),16)/255,parseInt(r.color.slice(5,7),16)/255]);
+  for(let i=0;i<N;i++){
+    const r=reg[i]; const c=rgb[r]||[0.4,0.4,0.4];
+    pos[i*3]=xyz[i*3]; pos[i*3+1]=-xyz[i*3+1]; pos[i*3+2]=xyz[i*3+2];
+    if(r===unk){ pos[i*3+2]=-9; }
+    col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col,3));
+  heatAttr=new THREE.BufferAttribute(heat,1); heatAttr.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('heat', heatAttr);
+  const mat=new THREE.ShaderMaterial({
+    uniforms:{uScale:{value:1.0}},
+    vertexShader:`attribute float heat; attribute vec3 color; varying vec3 vC; varying float vH; uniform float uScale;
+      void main(){ vC=color; vH=heat; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mv;
+        gl_PointSize=(1.5+4.0*heat)*uScale*(2.4/max(0.2,-mv.z)); }`,
+    fragmentShader:`varying vec3 vC; varying float vH;
+      void main(){ vec2 d=gl_PointCoord-0.5; float r2=dot(d,d); if(r2>0.25) discard;
+        float soft=smoothstep(0.25,0.04,r2); float a=(0.16+0.95*vH)*soft;
+        vec3 c=mix(vC*0.85, vec3(1.0), 0.3*vH)*(0.6+1.4*vH); gl_FragColor=vec4(c, a); }`,
+    transparent:true, depthWrite:false, depthTest:true, blending:THREE.AdditiveBlending});
+  pontos=new THREE.Points(geo, mat); grupo.add(pontos);
+  if(shell){
+    const dv=new DataView(shell); const nv=dv.getUint32(0,true), nf=dv.getUint32(4,true);
+    const v=new Float32Array(shell, 8, nv*3); const f=new Uint32Array(shell.slice(8+nv*12, 8+nv*12+nf*12));
+    const sv=new Float32Array(nv*3);
+    for(let i=0;i<nv;i++){ sv[i*3]=v[i*3]; sv[i*3+1]=-v[i*3+1]; sv[i*3+2]=v[i*3+2]; }
+    const sg=new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.BufferAttribute(sv,3)); sg.setIndex(new THREE.BufferAttribute(f,1)); sg.computeVertexNormals();
+    const sm=new THREE.ShaderMaterial({
+      uniforms:{uColor:{value:new THREE.Color(0x8fb0ff)}},
+      vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform vec3 uColor; varying vec3 vN; varying vec3 vV; void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.4); gl_FragColor=vec4(uColor*(0.35+0.9*f), 0.035+0.30*f); }`,
+      transparent:true, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending});
+    casca=new THREE.Mesh(sg, sm); grupo.add(casca);
+  }
+  resize();
+  const el=$('brain');
+  el.addEventListener('pointerdown',e=>{dragging=true; dragX=e.clientX; dragY=e.clientY; el.classList.add('drag'); el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointermove',e=>{ if(!dragging) return; dragOff+=(e.clientX-dragX)*0.006; rotX=Math.max(-0.7,Math.min(0.7,rotX+(e.clientY-dragY)*0.004)); dragX=e.clientX; dragY=e.clientY; lastInteract=performance.now(); });
+  const up=e=>{dragging=false; el.classList.remove('drag');};
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+}
+
+function resize(){
+  if(!renderer) return;
+  const r=$('brain').getBoundingClientRect(); const dpr=Math.min(1.5,window.devicePixelRatio||1);
+  renderer.setPixelRatio(dpr); renderer.setSize(Math.max(2,r.width), Math.max(2,r.height), false);
+  camera.aspect=r.width/r.height; camera.updateProjectionMatrix();
+  camera.position.z = Math.max(2.75, 2.75*(1.15/Math.max(0.5,camera.aspect)));
+  pontos.material.uniforms.uScale.value=dpr*Math.max(0.6, r.height/620);
+}
+window.addEventListener('resize',resize);
+
+function buildUI(){
+  $('bars').innerHTML=GROUPS.map(g=>`<div class="bar"><span>${g[1]}</span><i><b id="b_${g[0]}"></b></i><em id="e_${g[0]}">0 Hz</em></div>`).join('');
+  $('legend').innerHTML=regions.filter(r=>r.key!=='unknown').map(r=>`<div><s style="background:${r.color}"></s><span>${r.name} <em>· ${r.count.toLocaleString()}</em></span><em id="r_${r.id}">0</em></div>`).join('');
+}
+
+function draw(ts){
+  const dt=lastT?Math.min(0.1,(ts-lastT)/1000):0.016; lastT=ts||0;
+  if(corpoT && performance.now()-corpoT>6000){ $('corpoImg').classList.remove('on'); $('corpoCv').classList.remove('on'); $('corpoInfo').textContent='body offline'; $('corpoModo').textContent=''; corpoT=0; }
+  if(ultimoQuadro && performance.now()-ultimoQuadro>8000){ setStatus('off','brain offline'); ultimoQuadro=0; }
+  let k=0;
+  for(let j=0;j<nActive;j++){ const i=active[j]; const h=heat[i]*DECAY; if(h<=MIN_HEAT){heat[i]=0; continue;} heat[i]=h; active[k++]=i; }
+  nActive=k;
+  if(heatAttr) heatAttr.needsUpdate=true;
+  if(grupo){
+    rotBase+=rotSpeed*dt;
+    if(!dragging && performance.now()-lastInteract>2500){ dragOff*=Math.exp(-dt/2.0); rotX+=(0.08-rotX)*(1-Math.exp(-dt/2.0)); if(Math.abs(dragOff)<0.002) dragOff=0; }
+    grupo.rotation.y=rotBase+ROT_FRENTE+dragOff; grupo.rotation.x=rotX;
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(draw);
+}
+
+function setStatus(state,txt){ $('dot').className=state; $('stxt').textContent=txt; const t=$('liveTop'); if(t){ t.className='live '+(state==='live'?'on':'off'); $('liveTxt').textContent=state==='live'?'LIVE':'OFFLINE'; } }
+
+function connect(){
+  ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws'+(FLY_ID?'?t='+encodeURIComponent(FLY_ID):''));
+  ws.binaryType='arraybuffer';
+  ws.onopen=()=>{ setStatus('live','live'); retry=1000; };
+  ws.onclose=()=>{ setStatus('off','brain offline · reconnecting'); setTimeout(connect,retry); retry=Math.min(retry*2,15000); };
+  ws.onerror=()=>{ try{ws.close();}catch(e){} };
+  ws.onmessage=e=>{
+    if(typeof e.data==='string'){ const m=JSON.parse(e.data); if(m.tipo==='ola') hello=m; else if(m.tipo==='mercado') onMercado(m); else if(m.tipo==='config') aplicarConfig(m); return; }
+    onFrame(e.data);
+  };
+}
+
+function onFrame(buf){
+  const dv=new DataView(buf); const len=dv.getUint32(0,true);
+  const j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,len)));
+  if(j.tipo==='corpo'){ onCorpo(j, buf.slice(4+len)); return; }
+  const idx=j.enc==='dv'?decodeDV(new Uint8Array(buf,4+len)):new Uint32Array(buf.slice(4+len));
+  for(let k=0;k<idx.length;k++){ const i=idx[k]; if(i<N){ if(heat[i]<=0) active[nActive++]=i; heat[i]=1; } }
+  ultimoQuadro=performance.now();
+  updateUI(j);
+}
+
+function onCorpo(j, bytes){
+  corpoT=performance.now();
+  if(j.fmt==='pose'){
+    Corpo3D.quadro(j, bytes);
+    if(Corpo3D.estado.pronto){ $('corpoCv').classList.add('on'); $('corpoImg').classList.remove('on'); }
+  }else{
+    const img=$('corpoImg'); const url=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
+    img.onload=()=>{ if(corpoUrl) URL.revokeObjectURL(corpoUrl); corpoUrl=url; img.classList.add('on'); $('corpoCv').classList.remove('on'); };
+    img.src=url;
+  }
+  $('corpoModo').textContent=MODE_TEXT[j.mode]||''; $('corpoModo').className=j.mode||'';
+  rxCount++; const now=performance.now(); if(now-rxT0>=1000){ rxFps=Math.round(rxCount*1000/(now-rxT0)); rxCount=0; rxT0=now; }
+  $('corpoInfo').textContent=j.body_mode==='kinematic'?`${j.realtime?'real time':(j.time_scale+'× speed')} · ${j.step_hz||0} steps/s`:`physics · ${j.slowdown||'?'}× slow motion`;
+}
+
+function hora(t){ const d=new Date((t||0)*1000); return d.toTimeString().slice(0,8); }
+function onMercado(m){
+  if(m.classe==='limpar'){ $('mCards').innerHTML=''; $('mOrdens').innerHTML='<div class="card"><span class="r">no orders yet</span></div>'; return; }   // lancamento: o feed recomeca do zero
+  if(m.classe==='resumo'){
+    $('mModo').textContent=(m.modo==='real'?'real':'paper')+(m.ordens_ativas===false?' · orders paused until launch':'');
+    const p=m.pnl_pct||0, cls=p>0?'up':(p<0?'down':'');
+    $('wUsd').textContent='$'+(m.saldo_usd||0).toFixed(2);
+    $('wTok').textContent=Math.round(m.tokens||0).toLocaleString(); $('wTokLbl').textContent=(m.token||'tokens')+' she holds';
+    $('wPnl').textContent=(p>0?'+':'')+p.toFixed(2)+'%'; $('wPnl').className=cls; $('wPnl').style.color=cls==='up'?'var(--up)':(cls==='down'?'var(--down)':'#fff');
+    $('wOrd').textContent=m.ordens||0;
+    if(m.endereco && $('walTxt').textContent!==curto(m.endereco) && !$('wal').classList.contains('copiado')){ carteira=m.endereco; $('walTxt').textContent=curto(m.endereco); }
+    $('mResumo').innerHTML=(m.sentidos&&m.sentidos!==m.token?`she feels every trade of <b>${m.sentidos}</b>${m.sentidos_fonte==='chain'?' (live from the chain)':''} · she trades <b>${m.token}</b>`:`she is watching <b>${m.token}</b>`)+` · price <b>${(m.preco_eth||0).toExponential(2)} ETH</b> · 24h vol $${Math.round(m.vol_h24||0).toLocaleString()}<br>`
+      +`wallet value <b>$${(m.valor_usd||0).toFixed(2)}</b> (${(m.pnl_usd||0)>=0?'+':''}$${(m.pnl_usd||0).toFixed(2)})`
+      +(m.endereco?` · <a class="q" href="${EXPLORER}/address/${m.endereco}" target="_blank" rel="noopener">${curto(m.endereco)} on the explorer</a>`:'')
+      +`<br>per order: ${m.lote_pct||5}% of her ETH${m.max_ordem_usd?`, max <b>$${m.max_ordem_usd}</b>`:''} · at least 20 s apart${m.modo==='real'?' · real ETH, real curve':''}`
+      +(m.replay?`<br><span class="r">market quiet for ${Math.round((m.quieto_s||0)/60)} min · replaying older trades</span>`:'');
+    return;
+  }
+  const box=$('mCards'); const el=document.createElement('div');
+  if(m.classe==='trade'){
+    el.className='card '+m.kind;
+    el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.kind==='buy'?'BUY':'SELL'}${m.token?' '+m.token:''} $${(m.usd||0).toFixed(2)} by ${m.de||'?'} → she tastes <b>${m.estimulo}</b>${m.extra?' + sees a '+m.extra:''}${m.replay?' <span class="r">replay</span>':''}`;
+  }else if(m.classe==='ordem'){
+    // ordens dela ficam numa lista propria: no lancamento os cards de trade enterravam as ordens em segundos
+    el.className='card ordem '+m.lado;
+    el.innerHTML=`<span class="q">${hora(m.t)}</span> <b>SHE ${m.lado==='buy'?'BOUGHT':'SOLD'}</b> ${(m.eth||0).toFixed(4)} ETH${m.token_ordem?' of '+m.token_ordem:''} <span class="q">(${m.modo})</span>${m.tx?` <a class="q" href="${EXPLORER}/tx/${m.tx}" target="_blank" rel="noopener">tx ${curto(m.tx)}</a>`:''}<br><span class="r">${m.motivo||''}</span>`;
+    const bo=$('mOrdens'); if(bo.firstChild && bo.firstChild.textContent.includes('no orders yet')) bo.innerHTML='';
+    bo.prepend(el); while(bo.children.length>6) bo.removeChild(bo.lastChild);
+    return;
+  }else if(m.classe==='sinal'||m.classe==='info'){
+    el.className='card'; el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.texto||''}`;
+  }else return;
+  box.prepend(el); while(box.children.length>10) box.removeChild(box.lastChild);
+}
+
+function fmtLived(s){
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60), sec=(s%60);
+  return (h?h+'h ':'')+(h||m?m+'m ':'')+sec.toFixed(0)+'s';
+}
+
+function updateUI(j){
+  if(typeof j.rot==='number'){ rotSpeed=j.rot_speed||rotSpeed; const dif=((j.rot-rotBase+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI; rotBase+=Math.abs(dif)>0.5?dif:dif*0.2; }
+  $('sSpikes').textContent=Math.round(j.spikes_per_s).toLocaleString();
+  $('sLived').textContent=fmtLived(j.lived);
+  $('sRatio').textContent=j.ratio?j.ratio.toFixed(1)+'×':'–';
+  $('sSyn').textContent=(j.synapses_changed||0).toLocaleString();
+  $('sView').textContent=j.viewers; const vt=$('viewersTop'); if(vt) vt.textContent=j.viewers+' watching';
+  $('sStim').textContent=j.stimuli.length?'she feels: '+j.stimuli.join(', '):'';
+  $('sSeiz').textContent=(j.seizures||0).toLocaleString();
+  $('hstate').textContent=STATE_TEXT[j.state]||j.state;
+  $('hstate').className=(j.state||'');
+  setStatus('live',`live · ${j.idx_total.toLocaleString()} neurons fired this frame`);
+  for(const g of GROUPS){
+    const hz=j.dn[g[0]]||0; smooth[g[0]]=smooth[g[0]]*0.6+hz*0.4;
+    $('b_'+g[0]).style.width=Math.min(100,smooth[g[0]]/CAP_HZ*100)+'%';
+    $('e_'+g[0]).textContent=Math.round(smooth[g[0]])+' Hz';
+  }
+  regHist.push({c:j.regions,ms:j.brain_ms}); if(regHist.length>RATE_WINDOW) regHist.shift();
+  const ms=regHist.reduce((a,x)=>a+x.ms,0)||1;
+  for(const r of regions){ if(r.key==='unknown') continue;
+    const sum=regHist.reduce((a,x)=>a+(x.c[r.id]||0),0);
+    const el=$('r_'+r.id); if(el) el.textContent=Math.round(sum/ms*1000).toLocaleString();
+  }
+}
+load().catch(e=>{ setStatus('off','failed to load brain data'); console.error(e); });
+</script>
+</body>
+</html>

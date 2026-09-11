@@ -1,0 +1,7 @@
+# Ajustes ao vivo do mercado (relidos a cada segundo, sem reiniciar).
+# max_ordem_usd = teto em dolares por ordem (compra e venda); lote = fracao do ETH dela por compra.
+# 07/09 (Michel, no lancamento): de $5 para $10 por ordem.
+max_ordem_usd=10
+lote=0.10
+# nonce_base = transacoes da carteira dela ANTES deste lancamento (nao entram na contagem de ordens do site)
+nonce_base=0

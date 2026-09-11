@@ -1,0 +1,11 @@
+py/
+brain/data/flywire/
+brain/data/estado/
+brain/data/gravacao/
+moscas/
+__pycache__/
+*.pyc
+*.log
+relay.token
+gerente.token
+*.pkl

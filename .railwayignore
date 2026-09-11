@@ -1,0 +1,12 @@
+py/
+brain/data/
+brain/vendor/
+corpo/
+mercado/
+gerente/
+moscas/
+brand/
+*.pkl
+*.log
+__pycache__/
+prototipo.html
