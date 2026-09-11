@@ -1,0 +1,14 @@
+# Pacotes da mosca num pod NVIDIA (o torch com CUDA ja vem no template runpod/pytorch; nao reinstalar)
+numpy>=2.0,<3
+pandas>=2.2
+pyarrow>=17
+scipy>=1.13
+aiohttp>=3.9
+websockets>=12
+requests>=2.31
+imageio>=2.34
+pillow>=10
+mujoco==3.2.7
+flygym==1.2.1
+web3>=7,<9
+eth-account>=0.13

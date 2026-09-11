@@ -9,3 +9,4 @@ __pycache__/
 relay.token
 gerente.token
 *.pkl
+runpod.key
