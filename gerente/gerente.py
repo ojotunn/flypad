@@ -316,6 +316,18 @@ async def api_acordar(request):
     return web.json_response(col.ficha_publica(m))
 
 
+async def api_remover(request):
+    """Tira uma mosca da colonia (e do disco de estado): usada para limpar testes."""
+    m = col.por_id(request.match_info['id'])
+    if not m:
+        raise web.HTTPNotFound()
+    await col.dormir(m, '(removida)')
+    col.moscas = [x for x in col.moscas if x['id'] != m['id']]
+    col.salvar()
+    print(f'[gerente] {m["id"]} removida da colonia', flush=True)
+    return web.json_response({'ok': True, 'removida': m['id']})
+
+
 async def laco(app):
     """A cada 5 s: vigia processos, puxa a fila do relay, empurra a colonia."""
     await asyncio.sleep(1)
@@ -363,6 +375,7 @@ def main():
     app.router.add_post('/api/hatch', api_hatch_local)
     app.router.add_post('/api/dormir/{id}', api_dormir)
     app.router.add_post('/api/acordar/{id}', api_acordar)
+    app.router.add_post('/api/remover/{id}', api_remover)
     app.on_startup.append(ao_iniciar)
     print(f'[gerente] FLY PAD: {len(col.moscas)} moscas na colonia; teto {MAX_ACORDADAS} acordadas; relay {RELAY or "(sem relay)"}; porta {PORTA_GERENTE}', flush=True)
     web.run_app(app, host='127.0.0.1', port=PORTA_GERENTE, print=None)
