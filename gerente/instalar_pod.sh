@@ -38,6 +38,8 @@ export FLY_CORPO_PISO=preto FLY_CORPO_CORES=real
 export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
 export FLY_CEREBRO_AFINIDADE=0 FLY_CORPO_AFINIDADE=0
 pkill -f 'gerente/gerente.py' || true
+pkill -f 'brain/servidor.py' || true; pkill -f 'corpo/corpo.py' || true; pkill -f 'mercado/mercado.py' || true   # o gerente novo reabre as moscas
+sleep 2
 nohup bash -c 'while true; do python gerente/gerente.py; echo "[rodar] gerente saiu, reiniciando em 5 s"; sleep 5; done' >> /workspace/gerente.log 2>&1 &
 echo "gerente no ar (log: /workspace/gerente.log)"
 EOF
