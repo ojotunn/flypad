@@ -194,8 +194,9 @@ async def colonia_post(request):
     j = await request.json()
     lista = j.get('moscas') or []
     app = request.app
-    app['colonia'] = lista
-    app['colonia_t'] = time.time()
+    app['dados']['colonia'] = lista
+    app['dados']['colonia_t'] = time.time()
+    app['dados']['max_acordadas'] = j.get('max_acordadas')
     for f in lista:
         if ID_OK.match(str(f.get('id', ''))):
             mosca(app, f['id'])
@@ -220,9 +221,21 @@ def resumo_mosca(app, f):
 
 async def api_colonia(request):
     app = request.app
-    return web.json_response({'moscas': [resumo_mosca(app, f) for f in app['colonia']],
-                              'atualizada_ha_s': round(time.time() - app['colonia_t']) if app['colonia_t'] else None,
-                              'pendentes': len(app['fila'])})
+    d = app['dados']
+    return web.json_response({'moscas': [resumo_mosca(app, f) for f in d['colonia']], 'max_acordadas': d.get('max_acordadas'),
+                              'atualizada_ha_s': round(time.time() - d['colonia_t']) if d['colonia_t'] else None,
+                              'pendentes': len(d['fila'])})
+
+
+async def api_mosca(request):
+    """Ficha publica de uma mosca (a pagina de hatch espera aqui a carteira dela aparecer)."""
+    app = request.app
+    quem = str(request.query.get('t', '')).lower()
+    f = next((x for x in app['dados']['colonia'] if x.get('id') == quem), None)
+    if f is None:
+        p = next((x for x in app['dados']['fila'] if x['id'] == quem), None)
+        return web.json_response({'id': quem, 'estado': 'queued' if p else 'unknown', 'pending': bool(p)})
+    return web.json_response(resumo_mosca(app, f))
 
 
 async def api_hatch(request):
@@ -237,34 +250,73 @@ async def api_hatch(request):
     sexo = 'm' if str(j.get('sex', 'f')).lower().startswith('m') else 'f'
     x = str(j.get('x', '')).strip()[:200]
     imagem = str(j.get('image', '')).strip()[:300]
+    lancar = bool(j.get('launch'))
+    launcher = str(j.get('launcher', '')).strip().lower()[:42]
     if not nome or not ticker:
         raise web.HTTPBadRequest(text='name and ticker are required')
+    if not ca and not lancar:
+        raise web.HTTPBadRequest(text='paste the CA or launch from here')
     if ca and not re.match(r'^0x[0-9a-f]{40}$', ca):
         raise web.HTTPBadRequest(text='CA must be a 0x address')
     if x and not re.match(r'^https?://', x):
         raise web.HTTPBadRequest(text='X must be a link')
     app = request.app
-    if len(app['fila']) >= 50:
+    d = app['dados']
+    if len(d['fila']) >= 50:
         raise web.HTTPTooManyRequests(text='queue full, try again in a minute')
     fid = f"{ticker.lower()[:8]}-{secrets.token_hex(2)}"
-    pedido = {'id': fid, 'name': nome, 'ticker': ticker, 'ca': ca, 'sex': sexo, 'x': x, 'image': imagem, 't': time.time()}
-    app['fila'].append(pedido)
+    ticket = secrets.token_urlsafe(18)
+    pedido = {'id': fid, 'name': nome, 'ticker': ticker, 'ca': ca, 'sex': sexo, 'x': x, 'image': imagem, 't': time.time(), 'launcher': launcher}
+    d['fila'].append(pedido)
+    d['tickets'][fid] = ticket
     mosca(app, fid)
-    return web.json_response({'ok': True, 'id': fid, 'pending': True, 'page': f'/t/{fid}'})
+    return web.json_response({'ok': True, 'id': fid, 'ticket': ticket, 'pending': True, 'page': f'/t/{fid}'})
+
+
+async def api_hatch_ca(request):
+    """A pessoa assinou o lancamento na propria carteira: a pagina manda o CA (com o ticket do hatch).
+    O gerente confere na chain que as fees vao para a carteira da mosca antes de acorda-la."""
+    try:
+        j = await request.json()
+    except Exception:
+        raise web.HTTPBadRequest(text='json')
+    d = request.app['dados']
+    fid = str(j.get('id', '')).lower()
+    ca = str(j.get('ca', '')).strip().lower()
+    tx = str(j.get('tx', '')).strip().lower()[:80]
+    if d['tickets'].get(fid) != str(j.get('ticket', '')):
+        raise web.HTTPForbidden(text='ticket')
+    if not re.match(r'^0x[0-9a-f]{40}$', ca):
+        raise web.HTTPBadRequest(text='CA must be a 0x address')
+    d['fila_ca'] = [x for x in d['fila_ca'] if x['id'] != fid] + [{'id': fid, 'ca': ca, 'tx': tx, 't': time.time()}]
+    return web.json_response({'ok': True, 'id': fid, 'page': f'/t/{fid}'})
+
+
+async def fila_ca_get(request):
+    exige_token(request)
+    return web.json_response({'fila': list(request.app['dados']['fila_ca'])})
+
+
+async def fila_ca_feito(request):
+    exige_token(request)
+    j = await request.json()
+    d = request.app['dados']
+    d['fila_ca'] = [p for p in d['fila_ca'] if p['id'] != str(j.get('id', ''))]
+    return web.json_response({'ok': True})
 
 
 async def fila_get(request):
     exige_token(request)
-    return web.json_response({'fila': list(request.app['fila'])})
+    return web.json_response({'fila': list(request.app['dados']['fila'])})
 
 
 async def fila_feito(request):
     exige_token(request)
     j = await request.json()
     fid = str(j.get('id', ''))
-    app = request.app
-    app['fila'] = [p for p in app['fila'] if p['id'] != fid]
-    return web.json_response({'ok': True, 'restam': len(app['fila'])})
+    d = request.app['dados']
+    d['fila'] = [p for p in d['fila'] if p['id'] != fid]
+    return web.json_response({'ok': True, 'restam': len(d['fila'])})
 
 
 # ---------------- paginas ----------------
@@ -290,9 +342,9 @@ async def versao(request):
 async def saude(request):
     app = request.app
     vivas = [q for q, m in app['moscas'].items() if m['ws'] is not None]
-    return web.json_response({'ok': True, 'instancia': INSTANCIA, 'moscas': len(app['colonia']), 'fontes': vivas,
+    return web.json_response({'ok': True, 'instancia': INSTANCIA, 'moscas': len(app['dados']['colonia']), 'fontes': vivas,
                               'viewers': sum(len(m['espectadores']) for m in app['moscas'].values()),
-                              'pendentes': len(app['fila'])})
+                              'pendentes': len(app['dados']['fila'])})
 
 
 def escapar_js(v):
@@ -304,8 +356,8 @@ async def pagina_mosca(request):
     if not ID_OK.match(quem):
         raise web.HTTPNotFound()
     app = request.app
-    ficha = next((f for f in app['colonia'] if f.get('id') == quem), None)
-    pendente = next((p for p in app['fila'] if p['id'] == quem), None)
+    ficha = next((f for f in app['dados']['colonia'] if f.get('id') == quem), None)
+    pendente = next((p for p in app['dados']['fila'] if p['id'] == quem), None)
     if ficha is None and pendente is None and quem not in app['moscas']:
         raise web.HTTPNotFound(text='no fly with this id')
     f = ficha or pendente or {}
@@ -338,9 +390,7 @@ async def home(request):
 def main():
     app = web.Application()
     app['moscas'] = {}
-    app['colonia'] = []
-    app['colonia_t'] = 0.0
-    app['fila'] = []
+    app['dados'] = {'colonia': [], 'colonia_t': 0.0, 'fila': [], 'fila_ca': [], 'tickets': {}, 'max_acordadas': None}
     app.router.add_get('/', home)
     app.router.add_get('/t/{id}', pagina_mosca)
     app.router.add_get('/arena', arena)
@@ -351,6 +401,10 @@ def main():
     app.router.add_post('/colonia', colonia_post)
     app.router.add_get('/api/colonia', api_colonia)
     app.router.add_post('/api/hatch', api_hatch)
+    app.router.add_post('/api/hatch/ca', api_hatch_ca)
+    app.router.add_get('/api/mosca', api_mosca)
+    app.router.add_get('/fila_ca', fila_ca_get)
+    app.router.add_post('/fila_ca/feito', fila_ca_feito)
     app.router.add_get('/api/estado', api_estado)
     app.router.add_get('/api/mercado', api_mercado)
     app.router.add_get('/health', saude)

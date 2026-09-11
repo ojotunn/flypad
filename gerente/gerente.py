@@ -17,6 +17,41 @@ from pathlib import Path
 import aiohttp
 from aiohttp import web
 
+FACTORY = os.environ.get('PONS_FACTORY', '0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e')
+RPC = os.environ.get('RPC_URL', 'https://rpc.mainnet.chain.robinhood.com')
+ABI_FACTORY = [{'type': 'function', 'name': 'getLaunchedToken', 'stateMutability': 'view', 'inputs': [{'name': 'token', 'type': 'address'}],
+                'outputs': [{'name': '', 'type': 'tuple', 'components': [
+                    {'name': 'token', 'type': 'address'}, {'name': 'curve', 'type': 'address'}, {'name': 'deployer', 'type': 'address'},
+                    {'name': 'creatorFeeRecipient', 'type': 'address'}, {'name': 'pairToken', 'type': 'address'}, {'name': 'graduationThreshold', 'type': 'uint256'},
+                    {'name': 'poolFee', 'type': 'uint24'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'creatorTaxBps', 'type': 'uint16'},
+                    {'name': 'buybackEnabled', 'type': 'bool'}, {'name': 'phase', 'type': 'uint8'}, {'name': 'sweptQuote', 'type': 'uint256'},
+                    {'name': 'sweptTokens', 'type': 'uint256'}, {'name': 'sweptAt', 'type': 'uint256'}, {'name': 'exists', 'type': 'bool'}]}]}]
+
+
+def criar_carteira(pasta):
+    """Carteira propria da mosca: keystore cifrado + senha aleatoria na pasta dela (fora do git, nunca exibidos).
+    Devolve so o endereco."""
+    from eth_account import Account
+    pasta.mkdir(parents=True, exist_ok=True)
+    arq, arq_senha = pasta / 'carteira.json', pasta / 'carteira.senha'
+    if arq.exists():
+        return '0x' + json.loads(arq.read_text())['address']
+    conta = Account.create()
+    senha = secrets.token_urlsafe(24)
+    arq.write_text(json.dumps(Account.encrypt(conta.key, senha)))
+    arq_senha.write_text(senha)
+    return conta.address
+
+
+def token_paga_para(ca, carteira):
+    """Confere na chain: o token existe na factory da Pons e as creator fees vao para a carteira da mosca."""
+    from web3 import Web3
+    w3 = Web3(Web3.HTTPProvider(RPC, request_kwargs={'timeout': 20}))
+    f = w3.eth.contract(address=Web3.to_checksum_address(FACTORY), abi=ABI_FACTORY)
+    r = f.functions.getLaunchedToken(Web3.to_checksum_address(ca)).call()
+    existe = bool(r[14]); destino = str(r[3]).lower()
+    return existe, destino, str(r[1])
+
 RAIZ = Path(__file__).resolve().parent.parent
 PY = str(RAIZ / 'py' / 'Scripts' / 'python.exe') if (RAIZ / 'py' / 'Scripts' / 'python.exe').exists() else sys.executable
 MOSCAS = RAIZ / 'moscas'
@@ -162,12 +197,42 @@ class Colonia:
         fid = pedido['id']
         if self.por_id(fid):
             return self.por_id(fid)
-        m = {'id': fid, 'name': pedido['name'], 'ticker': pedido['ticker'], 'ca': pedido.get('ca', ''), 'sex': pedido.get('sex', 'f'),
-             'x': pedido.get('x', ''), 'image': pedido.get('image', ''), 'born': agora(), 'estado': 'sleeping', 'porta': self.porta_livre()}
+        m = {'id': fid, 'name': pedido['name'], 'ticker': pedido['ticker'], 'ca': (pedido.get('ca') or '').lower(), 'sex': pedido.get('sex', 'f'),
+             'x': pedido.get('x', ''), 'image': pedido.get('image', ''), 'born': agora(), 'estado': 'sleeping', 'porta': self.porta_livre(),
+             'launcher': pedido.get('launcher', ''), 'wallet': ''}
+        try:
+            m['wallet'] = criar_carteira(self.pasta(fid) / 'mercado')       # a carteira dela nasce antes do token: e o destino das fees
+        except Exception as e:
+            print(f'[gerente] carteira de {fid} nao criada: {e}', flush=True)
         self.moscas.append(m)
+        self.salvar()
+        if not m['ca']:
+            m['estado'] = 'waiting-launch'                                  # a pessoa ainda vai assinar o lancamento na Pons
+            print(f'[gerente] {fid} esperando o lancamento (carteira {m["wallet"]})', flush=True)
+            return m
+        await self.garantir_vaga()
+        self.acordar(m)
+        return m
+
+    async def receber_ca(self, fid, ca, tx=''):
+        """Token lancado pela pagina: confere na chain que as fees vao para a carteira da mosca e acorda."""
+        m = self.por_id(fid)
+        if not m:
+            return None
+        ca = (ca or '').lower()
+        try:
+            existe, destino, curva = await asyncio.get_event_loop().run_in_executor(None, token_paga_para, ca, m.get('wallet', ''))
+        except Exception as e:
+            m['erro'] = f'could not read the token on chain: {str(e)[:80]}'; print(f'[gerente] {fid}: {m["erro"]}', flush=True); self.salvar(); return m
+        if not existe:
+            m['erro'] = 'this CA is not a Pons V2 token'; self.salvar(); return m
+        if m.get('wallet') and destino != m['wallet'].lower():
+            m['erro'] = 'the token does not pay its creator fees to this fly'; self.salvar(); return m
+        m['ca'] = ca; m['curve'] = curva; m['tx'] = tx; m.pop('erro', None); m['estado'] = 'sleeping'
         self.salvar()
         await self.garantir_vaga()
         self.acordar(m)
+        print(f'[gerente] {fid}: token {ca} confere (fees -> carteira da mosca); acordando', flush=True)
         return m
 
     async def garantir_vaga(self):
@@ -177,7 +242,7 @@ class Colonia:
             await self.dormir(vitima, '(vaga para outra mosca)')
 
     def ficha_publica(self, m):
-        return {k: m.get(k) for k in ('id', 'name', 'ticker', 'ca', 'sex', 'x', 'image', 'born', 'estado', 'acordou', 'dormiu')}
+        return {k: m.get(k) for k in ('id', 'name', 'ticker', 'ca', 'sex', 'x', 'image', 'born', 'estado', 'acordou', 'dormiu', 'wallet', 'curve', 'tx', 'erro', 'launcher')}
 
 
 col = Colonia()
@@ -222,7 +287,7 @@ async def laco(app):
     """A cada 5 s: vigia processos, puxa a fila do relay, empurra a colonia."""
     await asyncio.sleep(1)
     for m in col.moscas:                        # ao iniciar: reacorda quem estava acordada (ate o teto)
-        if m.get('estado') in ('awake', 'booting') and len(col.acordadas()) < MAX_ACORDADAS:
+        if m.get('estado') in ('awake', 'booting') and m.get('ca') and len(col.acordadas()) < MAX_ACORDADAS:
             col.acordar(m)
     while True:
         try:
@@ -236,6 +301,11 @@ async def laco(app):
                             m = await col.hatch(pedido)
                             await s.post(f'{RELAY}/fila/feito', params={'token': TOKEN}, json={'id': pedido['id']})
                             print(f'[gerente] hatch da fila: {m["id"]} ({m["name"]})', flush=True)
+                        async with s.get(f'{RELAY}/fila_ca', params={'token': TOKEN}, timeout=aiohttp.ClientTimeout(total=10)) as r:
+                            fila_ca = (await r.json()).get('fila', [])
+                        for item in fila_ca:
+                            await col.receber_ca(item['id'], item.get('ca', ''), item.get('tx', ''))
+                            await s.post(f'{RELAY}/fila_ca/feito', params={'token': TOKEN}, json={'id': item['id']})
                     except Exception as e:
                         print(f'[gerente] fila: {str(e)[:80]}', flush=True)
                     try:
