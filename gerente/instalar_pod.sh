@@ -22,7 +22,9 @@ print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), torch.cuda.
 print('mujoco', mujoco.__version__, 'flygym', flygym.__version__)
 EOF
 mkdir -p brain/data/estado moscas
-# dados do conectoma: chegam por rsync do PC (brain/data/flywire e brain/data/neuronios.parquet); confere
+# dados do conectoma: chegam do PC como /workspace/flypad_dados.tar.gz (parquet de conectividade, anotacoes,
+# completude e neuronios.parquet; os caches weight_*.pkl sao regenerados aqui no CUDA na primeira carga)
+if [ -f /workspace/flypad_dados.tar.gz ]; then tar -xzf /workspace/flypad_dados.tar.gz -C brain/data && echo "dados extraidos"; fi
 if [ -f brain/data/neuronios.parquet ] && [ -d brain/data/flywire ]; then echo "dados: ok ($(du -sh brain/data/flywire | cut -f1))"; else echo "dados: FALTAM (rsync brain/data/flywire e neuronios.parquet)"; fi
 
 cat > gerente/rodar_pod.sh <<'EOF'

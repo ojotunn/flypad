@@ -10,3 +10,5 @@ relay.token
 gerente.token
 *.pkl
 runpod.key
+pod.id
+pod.ssh
