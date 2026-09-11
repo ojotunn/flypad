@@ -19,7 +19,7 @@ python -m pip install -q -r gerente/requirements-pod.txt
 python - <<'EOF'
 import torch, mujoco, flygym
 print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '-')
-print('mujoco', mujoco.__version__, 'flygym', flygym.__version__)
+print('mujoco', mujoco.__version__, 'flygym importado de', flygym.__file__)
 EOF
 mkdir -p brain/data/estado moscas
 # dados do conectoma: chegam do PC como /workspace/flypad_dados.tar.gz (parquet de conectividade, anotacoes,
