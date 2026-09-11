@@ -324,6 +324,12 @@ async def pagina_mosca(request):
     return web.Response(text=html, content_type='text/html', headers={'Cache-Control': 'no-store'})
 
 
+async def arena(request):
+    """Arena: todas as moscas no mesmo chao (por enquanto a previa com mercado simulado; a versao ao vivo vem do gerente)."""
+    html = (SITE / 'arena.html').read_text(encoding='utf-8')
+    return web.Response(text=html, content_type='text/html', headers={'Cache-Control': 'no-store'})
+
+
 async def home(request):
     html = (SITE / 'home.html').read_text(encoding='utf-8')
     return web.Response(text=html, content_type='text/html', headers={'Cache-Control': 'no-store'})
@@ -337,6 +343,7 @@ def main():
     app['fila'] = []
     app.router.add_get('/', home)
     app.router.add_get('/t/{id}', pagina_mosca)
+    app.router.add_get('/arena', arena)
     app.router.add_get('/ws', ws_handler)
     app.router.add_get('/fonte', fonte)
     app.router.add_get('/fila', fila_get)
