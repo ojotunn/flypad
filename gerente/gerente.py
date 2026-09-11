@@ -43,14 +43,39 @@ def criar_carteira(pasta):
     return conta.address
 
 
-def token_paga_para(ca, carteira):
-    """Confere na chain: o token existe na factory da Pons e as creator fees vao para a carteira da mosca."""
+def conferir_token(ca, launcher):
+    """Confere na chain: o token existe na factory da Pons e foi lancado por quem pediu a mosca.
+    As creator fees ficam com o dev (creatorFeeRecipient escolhido por ele na hora do lancamento)."""
     from web3 import Web3
     w3 = Web3(Web3.HTTPProvider(RPC, request_kwargs={'timeout': 20}))
     f = w3.eth.contract(address=Web3.to_checksum_address(FACTORY), abi=ABI_FACTORY)
     r = f.functions.getLaunchedToken(Web3.to_checksum_address(ca)).call()
-    existe = bool(r[14]); destino = str(r[3]).lower()
-    return existe, destino, str(r[1])
+    return {'existe': bool(r[14]), 'deployer': str(r[2]).lower(), 'fee_recipient': str(r[3]).lower(), 'curva': str(r[1])}
+
+
+def conferir_taxa(tx_hash, launcher):
+    """Taxa de lancamento do FLY PAD: confere a transferencia na chain (destino, valor e quem pagou)."""
+    if TAXA_WEI <= 0:
+        return True, 'sem taxa'
+    if not tx_hash:
+        return False, 'the FLY PAD launch fee was not paid'
+    from web3 import Web3
+    w3 = Web3(Web3.HTTPProvider(RPC, request_kwargs={'timeout': 20}))
+    try:
+        t = w3.eth.get_transaction(tx_hash)
+        r = w3.eth.get_transaction_receipt(tx_hash)
+    except Exception as e:
+        return False, f'fee transaction not found: {str(e)[:60]}'
+    if r.status != 1:
+        return False, 'the fee transaction failed on chain'
+    if str(t['to']).lower() != PLATAFORMA.lower():
+        return False, 'the fee went to another address'
+    if int(t['value']) < TAXA_WEI:
+        return False, f'the fee is below {TAXA_WEI / 1e18:.4f} ETH'
+    if launcher and str(t['from']).lower() != launcher.lower():
+        return False, 'the fee was paid by another wallet'
+    return True, 'ok'
+
 
 RAIZ = Path(__file__).resolve().parent.parent
 PY = str(RAIZ / 'py' / 'Scripts' / 'python.exe') if (RAIZ / 'py' / 'Scripts' / 'python.exe').exists() else sys.executable
@@ -64,6 +89,8 @@ PASSOS_S = os.environ.get('FLY_PASSOS_S', '120')
 PORTA_BASE = int(os.environ.get('FLY_PORTA_BASE', '8500'))
 PORTA_GERENTE = int(os.environ.get('FLY_GERENTE_PORTA', '8440'))
 BOOT_S = 150          # tempo que um cerebro leva para carregar o conectoma antes de responder
+PLATAFORMA = os.environ.get('FLY_PLATAFORMA', '')                       # carteira do FLY PAD: recebe a taxa de lancamento
+TAXA_WEI = int(float(os.environ.get('FLY_TAXA_ETH', '0')) * 1e18)       # 0 = hatch de graca (fase de teste)
 
 
 def agora():
@@ -199,7 +226,7 @@ class Colonia:
             return self.por_id(fid)
         m = {'id': fid, 'name': pedido['name'], 'ticker': pedido['ticker'], 'ca': (pedido.get('ca') or '').lower(), 'sex': pedido.get('sex', 'f'),
              'x': pedido.get('x', ''), 'image': pedido.get('image', ''), 'born': agora(), 'estado': 'sleeping', 'porta': self.porta_livre(),
-             'launcher': pedido.get('launcher', ''), 'wallet': ''}
+             'launcher': (pedido.get('launcher') or '').lower(), 'taxa_tx': pedido.get('taxa_tx', ''), 'wallet': ''}
         try:
             m['wallet'] = criar_carteira(self.pasta(fid) / 'mercado')       # a carteira dela nasce antes do token: e o destino das fees
         except Exception as e:
@@ -220,19 +247,25 @@ class Colonia:
         if not m:
             return None
         ca = (ca or '').lower()
+        laco = asyncio.get_event_loop()
         try:
-            existe, destino, curva = await asyncio.get_event_loop().run_in_executor(None, token_paga_para, ca, m.get('wallet', ''))
+            info = await laco.run_in_executor(None, conferir_token, ca, m.get('launcher', ''))
         except Exception as e:
             m['erro'] = f'could not read the token on chain: {str(e)[:80]}'; print(f'[gerente] {fid}: {m["erro"]}', flush=True); self.salvar(); return m
-        if not existe:
+        if not info['existe']:
             m['erro'] = 'this CA is not a Pons V2 token'; self.salvar(); return m
-        if m.get('wallet') and destino != m['wallet'].lower():
-            m['erro'] = 'the token does not pay its creator fees to this fly'; self.salvar(); return m
-        m['ca'] = ca; m['curve'] = curva; m['tx'] = tx; m.pop('erro', None); m['estado'] = 'sleeping'
+        dono = (m.get('launcher') or '').lower()
+        if dono and dono not in (info['deployer'], info['fee_recipient']):
+            m['erro'] = 'this token was launched by another wallet'; self.salvar(); return m
+        ok, motivo = await laco.run_in_executor(None, conferir_taxa, m.get('taxa_tx', ''), dono)
+        if not ok:
+            m['erro'] = motivo; print(f'[gerente] {fid}: {motivo}', flush=True); self.salvar(); return m
+        m['ca'] = ca; m['curve'] = info['curva']; m['fee_recipient'] = info['fee_recipient']; m['tx'] = tx
+        m.pop('erro', None); m['estado'] = 'sleeping'
         self.salvar()
         await self.garantir_vaga()
         self.acordar(m)
-        print(f'[gerente] {fid}: token {ca} confere (fees -> carteira da mosca); acordando', flush=True)
+        print(f'[gerente] {fid}: token {ca} confere (creator fees -> {info["fee_recipient"]}); acordando', flush=True)
         return m
 
     async def garantir_vaga(self):
@@ -242,7 +275,7 @@ class Colonia:
             await self.dormir(vitima, '(vaga para outra mosca)')
 
     def ficha_publica(self, m):
-        return {k: m.get(k) for k in ('id', 'name', 'ticker', 'ca', 'sex', 'x', 'image', 'born', 'estado', 'acordou', 'dormiu', 'wallet', 'curve', 'tx', 'erro', 'launcher')}
+        return {k: m.get(k) for k in ('id', 'name', 'ticker', 'ca', 'sex', 'x', 'image', 'born', 'estado', 'acordou', 'dormiu', 'wallet', 'curve', 'tx', 'erro', 'launcher', 'fee_recipient')}
 
 
 col = Colonia()

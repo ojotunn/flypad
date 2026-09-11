@@ -37,11 +37,19 @@ export FLY_PASSOS_S="${FLY_PASSOS_S:-120}"
 export FLY_CORPO_PISO=preto FLY_CORPO_CORES=real
 export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
 export FLY_CEREBRO_AFINIDADE=0 FLY_CORPO_AFINIDADE=0
-pkill -f 'gerente/gerente.py' || true
+export FLY_PLATAFORMA="${FLY_PLATAFORMA:-0x3EF754638fF72dC83693B3D099eEf2C335D804A7}"   # carteira do FLY PAD: recebe a taxa de lancamento
+export FLY_TAXA_ETH="${FLY_TAXA_ETH:-0}"   # 0 = hatch de graca (fase de teste); as creator fees do token sao do dev
+pkill -f 'gerente/loop_pod.sh' || true; pkill -f 'gerente/gerente.py' || true
 pkill -f 'brain/servidor.py' || true; pkill -f 'corpo/corpo.py' || true; pkill -f 'mercado/mercado.py' || true   # o gerente novo reabre as moscas
 sleep 2
-nohup bash -c 'while true; do python gerente/gerente.py; echo "[rodar] gerente saiu, reiniciando em 5 s"; sleep 5; done' >> /workspace/gerente.log 2>&1 &
+nohup bash gerente/loop_pod.sh >> /workspace/gerente.log 2>&1 &
 echo "gerente no ar (log: /workspace/gerente.log)"
 EOF
-chmod +x gerente/rodar_pod.sh
+cat > gerente/loop_pod.sh <<'EOF'
+#!/usr/bin/env bash
+# Mantem o gerente vivo (reabre se cair). Parar: pkill -f gerente/loop_pod.sh; pkill -f gerente/gerente.py
+cd /workspace/flypad
+while true; do python gerente/gerente.py; echo "[loop] gerente saiu, reiniciando em 5 s"; sleep 5; done
+EOF
+chmod +x gerente/rodar_pod.sh gerente/loop_pod.sh
 echo "instalacao concluida em /workspace/flypad"

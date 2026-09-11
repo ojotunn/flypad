@@ -120,10 +120,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
         <div class="field"><label for="fImg">Image URL (optional)</label><input id="fImg" placeholder="https://…"></div>
         <div class="two modo-launch">
           <div class="field"><label for="fBuy">Your first buy (ETH)</label><input id="fBuy" type="number" step="0.001" min="0" value="0.01"><small>optional · launch and buy in one transaction</small></div>
-          <div class="field"><label for="fTax">Creator fee on every trade</label><select id="fTax"><option value="100">1% · goes to the fly's wallet</option><option value="50">0.5%</option><option value="200">2%</option><option value="0">none</option></select></div>
+          <div class="field"><label for="fTax">Creator fee on every trade</label><select id="fTax"><option value="100">1% · paid to you</option><option value="50">0.5%</option><option value="200">2%</option><option value="0">none</option></select><small>Pons pays it to your wallet, not to FLY PAD.</small></div>
         </div>
         <div class="fee modo-launch"><span>Pons launch fee</span><b id="feeLaunch">reading…</b></div>
-        <div class="fee modo-launch" style="border-top:0;padding-top:0"><span>signed by</span><b id="feeWallet">your own wallet · nothing goes through FLY PAD</b></div>
+        <div class="fee modo-launch" style="border-top:0;padding-top:0"><span>FLY PAD hatch fee</span><b id="feeHatch">reading…</b></div>
+        <div class="fee modo-launch" style="border-top:0;padding-top:0"><span>creator fees on every trade</span><b>yours · they go to the wallet that signs</b></div>
         <div class="fee modo-ca" hidden><span>hatching · test phase</span><b>free</b></div>
         <div class="fee" style="border-top:0;padding-top:0"><span>brain time</span><b>boots in about 2 minutes</b></div>
         <button class="btn primary" type="submit" id="btnHatch" style="justify-self:start">Connect wallet and launch</button>
@@ -140,7 +141,8 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
         <div><span>many trades in a minute</span><b>vibration</b></div>
         <div><span>silence for days</span><b>it sleeps, brain saved</b></div>
       </div>
-      <p class="note" style="margin-top:16px"><b>Its body is real too.</b> The fly at the bottom of each page is the NeuroMechFly model, moved only by the fly's own descending neurons: gait, backing up, freezing, proboscis, grooming, takeoff.</p>
+      <p class="note" style="margin-top:16px"><b>The token stays yours.</b> FLY PAD charges the hatch fee and nothing else: the creator fees Pons pays on every trade go to the wallet that launched the token. The fly gets a brain, a body and a page.</p>
+      <p class="note" style="margin-top:12px"><b>Its body is real too.</b> The fly at the bottom of each page is the NeuroMechFly model, moved only by the fly's own descending neurons: gait, backing up, freezing, proboscis, grooming, takeoff.</p>
     </div>
   </div></section>
 
@@ -152,7 +154,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
       <div class="step"><div class="k">Colony</div><h3>Flies share one GPU</h3><p>A few flies are awake at a time. A quiet fly sleeps with its synapses saved and wakes when its turn comes. Courtship between tokens is the next step.</p></div>
     </div>
     <div class="econ">
-      <div><b>free</b><span>hatching · test phase</span></div>
+      <div><b id="econFee">free</b><span>hatch fee · test phase</span></div>
       <div><b id="eMax">6</b><span>flies awake per GPU</span></div>
       <div><b>120 / s</b><span>brain steps, capped to share the GPU</span></div>
       <div><b>sleep, not death</b><span>quiet fly saves its synapses</span></div>
@@ -187,20 +189,21 @@ function desenhar(){
 }
 async function puxar(){ try{ const r=await fetch('/api/colonia',{cache:'no-store'}); dados=await r.json(); desenhar(); }catch(e){ $('liveCount').textContent='colony offline'; } }
 puxar(); setInterval(puxar, 4000);
+setTimeout(()=>{ const v=Number(cfg.taxa_eth||0); const e=$('econFee'); if(e) e.textContent = v>0 ? v+' ETH' : 'free'; }, 1500);
 // ---------- hatch: lancar na Pons pela pagina (a carteira da pessoa assina) ou colar um CA ----------
+// A casa cobra so a taxa de lancamento (se houver). As creator fees do token ficam com quem lanca.
 const CHAIN={id:4663, hex:'0x1237', name:'Robinhood Chain', rpc:'https://rpc.mainnet.chain.robinhood.com', explorer:'https://robinhoodchain.blockscout.com'};
 const FACTORY='0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e', ROUTER='0xe33E9E479dF8802cb0866d5d05258bEc4cF62948', ZERO='0x0000000000000000000000000000000000000000';
 const TUPLE='tuple(string name,string symbol,string logo,string description,tuple(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled,bytes32 expectedEconomics,bytes32 salt)';
-const ABI_F=[`function launchToken(${TUPLE} params,uint256 launchConfigId,address pairToken) payable returns (address token,address curve)`,'function launchFee() view returns (uint256)','function launchEnabled() view returns (bool)','function canLaunch(address) view returns (bool)','function maxCreatorTaxBps() view returns (uint256)','function previewLaunchEconomics(uint256,address) view returns (bytes32)','function getLaunchConfig(uint256) view returns (tuple(uint256 supply,uint256 curveFeeBps,uint256 phantomQuote,uint256 graduationThreshold,uint24 poolFee,int24 tickSpacing,bool enabled))','event TokenLaunched(address indexed token,address indexed curve,address indexed deployer,address pairToken,uint256 launchConfigId,uint256 graduationThreshold)'];
+const ABI_F=[`function launchToken(${TUPLE} params,uint256 launchConfigId,address pairToken) payable returns (address token,address curve)`,'function launchFee() view returns (uint256)','function launchEnabled() view returns (bool)','function canLaunch(address) view returns (bool)','function previewLaunchEconomics(uint256,address) view returns (bytes32)','event TokenLaunched(address indexed token,address indexed curve,address indexed deployer,address pairToken,uint256 launchConfigId,uint256 graduationThreshold)'];
 const ABI_R=[`function launchAndBuy(${TUPLE} params,uint256 launchConfigId,address pairToken,uint256 quoteIn,uint256 minTokensOut,address recipient,address[] snipeTaxExemptions) payable returns (address token,address curve,uint256 tokensOut)`];
-let modo='launch'; const leitor=new ethers.JsonRpcProvider(CHAIN.rpc, CHAIN.id, {staticNetwork:true}); let termos=null;
+let modo='launch'; const leitor=new ethers.JsonRpcProvider(CHAIN.rpc, CHAIN.id, {staticNetwork:true}); let termos=null, cfg={taxa_eth:'0', plataforma:''};
 function aplicarModo(){ document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.modo===modo)); document.querySelectorAll('.modo-launch').forEach(e=>e.hidden=modo!=='launch'); document.querySelectorAll('.modo-ca').forEach(e=>e.hidden=modo!=='ca'); $('fCa').required=modo==='ca'; $('btnHatch').textContent=modo==='launch'?'Connect wallet and launch':'Hatch this fly'; }
 document.querySelectorAll('.aba').forEach(b=>b.addEventListener('click', ()=>{ modo=b.dataset.modo; aplicarModo(); })); aplicarModo();
-async function lerTermos(){ try{ const f=new ethers.Contract(FACTORY, ABI_F, leitor); const [fee, eco, cfg, aberto]=await Promise.all([f.launchFee(), f.previewLaunchEconomics(0, ZERO), f.getLaunchConfig(0), f.launchEnabled()]); termos={fee, eco, cfg, aberto}; $('feeLaunch').textContent=ethers.formatEther(fee)+' ETH + gas'+(aberto?'':' · pons is whitelisting launchers right now'); }catch(e){ $('feeLaunch').textContent='could not read pons terms'; } }
-lerTermos();
-const espera=ms=>new Promise(r=>setTimeout(r,ms));
-async function carteira(){ if(!window.ethereum) throw new Error('no wallet found in this browser (install MetaMask or Rabby)'); const prov=new ethers.BrowserProvider(window.ethereum); await prov.send('eth_requestAccounts', []); const rede=await prov.getNetwork(); if(Number(rede.chainId)!==CHAIN.id){ try{ await prov.send('wallet_switchEthereumChain', [{chainId:CHAIN.hex}]); }catch(e){ await prov.send('wallet_addEthereumChain', [{chainId:CHAIN.hex, chainName:CHAIN.name, rpcUrls:[CHAIN.rpc], blockExplorerUrls:[CHAIN.explorer], nativeCurrency:{name:'Ether', symbol:'ETH', decimals:18}}]); } } const prov2=new ethers.BrowserProvider(window.ethereum); return await prov2.getSigner(); }
-async function esperarCarteiraDaMosca(id){ for(let i=0;i<40;i++){ const r=await fetch('/api/mosca?t='+id,{cache:'no-store'}); const j=await r.json(); if(j.wallet) return j.wallet; await espera(2000); } throw new Error('the fly wallet did not show up in time (is the GPU manager online?)'); }
+async function lerConfig(){ try{ cfg=await (await fetch('/api/config',{cache:'no-store'})).json(); }catch(e){} const v=Number(cfg.taxa_eth||0); const el=$('feeHatch'); if(el) el.textContent = v>0 ? v+' ETH' : 'free while in test'; }
+async function lerTermos(){ try{ const f=new ethers.Contract(FACTORY, ABI_F, leitor); const [fee, eco, aberto]=await Promise.all([f.launchFee(), f.previewLaunchEconomics(0, ZERO), f.launchEnabled()]); termos={fee, eco, aberto}; $('feeLaunch').textContent=ethers.formatEther(fee)+' ETH + gas'+(aberto?'':' · pons is whitelisting launchers right now'); }catch(e){ $('feeLaunch').textContent='could not read pons terms'; } }
+lerConfig(); lerTermos();
+async function carteira(){ if(!window.ethereum) throw new Error('no wallet found in this browser (install MetaMask or Rabby)'); const prov=new ethers.BrowserProvider(window.ethereum); await prov.send('eth_requestAccounts', []); const rede=await prov.getNetwork(); if(Number(rede.chainId)!==CHAIN.id){ try{ await prov.send('wallet_switchEthereumChain', [{chainId:CHAIN.hex}]); }catch(e){ await prov.send('wallet_addEthereumChain', [{chainId:CHAIN.hex, chainName:CHAIN.name, rpcUrls:[CHAIN.rpc], blockExplorerUrls:[CHAIN.explorer], nativeCurrency:{name:'Ether', symbol:'ETH', decimals:18}}]); } } return await new ethers.BrowserProvider(window.ethereum).getSigner(); }
 $('hatchForm').addEventListener('submit', async (ev)=>{
   ev.preventDefault(); const msg=$('hatchMsg'); const btn=$('btnHatch'); btn.disabled=true;
   const base={name:$('fName').value.trim(), ticker:$('fTicker').value.trim().toUpperCase(), sex:$('fSex').value, x:$('fX').value.trim(), image:$('fImg').value.trim()};
@@ -213,20 +216,21 @@ $('hatchForm').addEventListener('submit', async (ev)=>{
     msg.textContent='1/4 · connecting your wallet…'; const signer=await carteira(); const quem=(await signer.getAddress()).toLowerCase();
     if(!termos) await lerTermos(); if(!termos) throw new Error('pons terms unavailable, try again');
     const f=new ethers.Contract(FACTORY, ABI_F, leitor); if(!(await f.canLaunch(quem))) throw new Error('pons only accepts launches from whitelisted wallets right now, and this wallet is not on the list');
-    msg.textContent='2/4 · creating the fly and its wallet…';
-    const r=await fetch('/api/hatch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...base, launch:true, launcher:quem})}); const t=await r.text(); if(!r.ok) throw new Error(t); const h=JSON.parse(t);
-    const walletMosca=await esperarCarteiraDaMosca(h.id);
-    msg.innerHTML=`3/4 · sign the launch in your wallet · creator fees go to the fly's wallet <span class="q">${walletMosca.slice(0,6)}…${walletMosca.slice(-4)}</span>`;
-    const params={name:base.name, symbol:base.ticker, logo:base.image||'', description:$('fDesc').value.trim(), socials:{twitter:base.x||'', telegram:'', discord:'', website:location.origin+h.page, farcaster:''}, creatorFeeRecipient:walletMosca, creatorTaxBps:Number($('fTax').value||0), buybackEnabled:false, expectedEconomics:termos.eco, salt:ethers.hexlify(ethers.randomBytes(32))};
+    let taxaTx='';
+    const taxa=ethers.parseEther(String(cfg.taxa_eth||'0'));
+    if(taxa>0n && cfg.plataforma){ msg.textContent=`2/4 · paying the FLY PAD hatch fee (${cfg.taxa_eth} ETH)…`; const t1=await signer.sendTransaction({to:cfg.plataforma, value:taxa}); await t1.wait(); taxaTx=t1.hash; }
+    msg.textContent='3/4 · sign the launch in your wallet · the creator fees are yours';
+    const r=await fetch('/api/hatch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...base, launch:true, launcher:quem, taxa_tx:taxaTx})}); const t=await r.text(); if(!r.ok) throw new Error(t); const h=JSON.parse(t);
+    const params={name:base.name, symbol:base.ticker, logo:base.image||'', description:$('fDesc').value.trim(), socials:{twitter:base.x||'', telegram:'', discord:'', website:location.origin+h.page, farcaster:''}, creatorFeeRecipient:quem, creatorTaxBps:Number($('fTax').value||0), buybackEnabled:false, expectedEconomics:termos.eco, salt:ethers.hexlify(ethers.randomBytes(32))};
     const devBuy=ethers.parseEther(String($('fBuy').value||'0')); let tx;
     if(devBuy>0n){ const rt=new ethers.Contract(ROUTER, ABI_R, signer); tx=await rt.launchAndBuy(params, 0, ZERO, devBuy, 0, quem, [], {value: termos.fee+devBuy}); }
     else { const fs=new ethers.Contract(FACTORY, ABI_F, signer); tx=await fs.launchToken(params, 0, ZERO, {value: termos.fee}); }
     msg.innerHTML=`4/4 · waiting for the chain · <a href="${CHAIN.explorer}/tx/${tx.hash}" target="_blank" rel="noopener">tx ${tx.hash.slice(0,10)}…</a>`;
     const rec=await tx.wait(); const iface=new ethers.Interface(ABI_F); let ca=null;
     for(const lg of rec.logs){ try{ const p=iface.parseLog(lg); if(p&&p.name==='TokenLaunched'){ ca=p.args.token; break; } }catch(e){} }
-    if(!ca) throw new Error('launched, but the token address was not found in the receipt · paste the CA in the other tab');
+    if(!ca) throw new Error('launched, but the token address was not in the receipt · paste the CA in the other tab');
     const r2=await fetch('/api/hatch/ca',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:h.id, ticket:h.ticket, ca, tx:tx.hash})}); if(!r2.ok) throw new Error(await r2.text());
-    msg.innerHTML=`launched · $${base.ticker} is <span class="q">${ca}</span> · the fly wakes up in about 2 minutes · <a href="${h.page}">open its page</a> · <a href="https://www.ponsfamily.com/launchpad/${ca}" target="_blank" rel="noopener">see it on pons</a>`;
+    msg.innerHTML=`launched · $${base.ticker} is <span class="q">${ca}</span> · creator fees go to your wallet · the fly wakes up in about 2 minutes · <a href="${h.page}">open its page</a> · <a href="https://www.ponsfamily.com/launchpad/${ca}" target="_blank" rel="noopener">see it on pons</a>`;
     ev.target.reset(); aplicarModo(); puxar();
   }catch(e){ msg.textContent='could not hatch: '+(e.shortMessage||e.reason||e.message||String(e)).slice(0,220); }
   finally{ btn.disabled=false; }

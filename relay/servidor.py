@@ -23,6 +23,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 SITE = RAIZ / 'site'
 FILA_MAX = 6
 MAX_MOSCAS = int(os.environ.get('FLY_MAX_MOSCAS', '200'))
+PLATAFORMA = os.environ.get('FLY_PLATAFORMA', '')          # carteira do FLY PAD: recebe a taxa de lancamento
+TAXA_ETH = os.environ.get('FLY_TAXA_ETH', '0')             # 0 = hatch de graca (fase de teste)
 
 
 def cabecalho(dados):
@@ -227,6 +229,11 @@ async def api_colonia(request):
                               'pendentes': len(d['fila'])})
 
 
+async def api_config(request):
+    """O que a pagina precisa saber para lancar: taxa do FLY PAD e para onde ela vai."""
+    return web.json_response({'taxa_eth': TAXA_ETH, 'plataforma': PLATAFORMA, 'chain_id': 4663})
+
+
 async def api_mosca(request):
     """Ficha publica de uma mosca (a pagina de hatch espera aqui a carteira dela aparecer)."""
     app = request.app
@@ -252,6 +259,7 @@ async def api_hatch(request):
     imagem = str(j.get('image', '')).strip()[:300]
     lancar = bool(j.get('launch'))
     launcher = str(j.get('launcher', '')).strip().lower()[:42]
+    taxa_tx = str(j.get('taxa_tx', '')).strip().lower()[:80]
     if not nome or not ticker:
         raise web.HTTPBadRequest(text='name and ticker are required')
     if not ca and not lancar:
@@ -266,7 +274,7 @@ async def api_hatch(request):
         raise web.HTTPTooManyRequests(text='queue full, try again in a minute')
     fid = f"{ticker.lower()[:8]}-{secrets.token_hex(2)}"
     ticket = secrets.token_urlsafe(18)
-    pedido = {'id': fid, 'name': nome, 'ticker': ticker, 'ca': ca, 'sex': sexo, 'x': x, 'image': imagem, 't': time.time(), 'launcher': launcher}
+    pedido = {'id': fid, 'name': nome, 'ticker': ticker, 'ca': ca, 'sex': sexo, 'x': x, 'image': imagem, 't': time.time(), 'launcher': launcher, 'taxa_tx': taxa_tx}
     d['fila'].append(pedido)
     d['tickets'][fid] = ticket
     mosca(app, fid)
@@ -403,6 +411,7 @@ def main():
     app.router.add_post('/api/hatch', api_hatch)
     app.router.add_post('/api/hatch/ca', api_hatch_ca)
     app.router.add_get('/api/mosca', api_mosca)
+    app.router.add_get('/api/config', api_config)
     app.router.add_get('/fila_ca', fila_ca_get)
     app.router.add_post('/fila_ca/feito', fila_ca_feito)
     app.router.add_get('/api/estado', api_estado)
