@@ -185,7 +185,7 @@ details p{margin:10px 0 0;line-height:1.55}
     <section><h2>What it wants to do</h2><div id="bars"></div></section>
     <section id="mercadoSec"><h2>Its token</h2>
       <div class="stats" id="tokStats" style="margin-bottom:10px">
-        <div class="stat"><b id="tPreco">–</b><span>price</span></div>
+        <div class="stat"><b id="tMcap">–</b><span>market cap</span></div>
         <div class="stat"><b id="tVol">–</b><span>24h volume</span></div>
       </div>
       <div class="mres" id="mResumo">waiting for the market reader…</div>
@@ -388,11 +388,13 @@ function hora(t){ const d=new Date((t||0)*1000); return d.toTimeString().slice(0
 function onMercado(m){
   if(m.classe==='limpar'){ $('mCards').innerHTML=''; return; }   // lancamento: o feed recomeca do zero
   if(m.classe==='resumo'){
-    const preco=m.preco_usd||0, vol=m.vol_h24||0;
-    $('tPreco').textContent=preco?('$'+(preco<0.01?preco.toExponential(2):preco.toFixed(4))):'–';
-    $('tVol').textContent=vol?('$'+Math.round(vol).toLocaleString()):'–';
+    const preco=m.preco_token_usd||0, vol=m.vol_token_h24||0, mcap=m.mcap_usd||0;
+    const dinheiro=v=>v>=1e6?('$'+(v/1e6).toFixed(2)+'M'):(v>=1e3?('$'+Math.round(v).toLocaleString()):('$'+v.toFixed(2)));
+    $('tMcap').textContent=mcap?dinheiro(mcap):'–';
+    $('tVol').textContent=vol?dinheiro(vol):'–';
     const alvo=m.sentidos||m.token||'its token';
-    $('mResumo').innerHTML=`it feels every trade of <b>${alvo}</b>${m.sentidos_fonte==='chain'?' (live from the Pons curve)':''}`
+    const precoTxt=preco?(' · price $'+(preco<0.01?preco.toExponential(2):preco.toFixed(4))):'';
+    $('mResumo').innerHTML=`it feels every trade of <b>${alvo}</b>${m.graduado?' (graduated · trading in the pool)':(m.sentidos_fonte==='chain'?' (live from the Pons curve)':'')}${precoTxt}`
       +(m.replay?`<br><span class="r">market quiet for ${Math.round((m.quieto_s||0)/60)} min · replaying older trades on screen</span>`:'');
     return;
   }

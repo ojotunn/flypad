@@ -165,6 +165,28 @@ def ler_pool(pool):
             'token': _token_de(d['data'])}
 
 
+def ler_token(ca):
+    """Ficha do token da mosca: preco, market cap, volume 24 h, se ja graduou e em qual pool ele negocia agora."""
+    d = gecko(f'/tokens/{ca}?include=top_pools')
+    if not d or not d.get('data'):
+        return None
+    a = d['data']['attributes']
+    lp = a.get('launchpad_details') or {}
+    pools = []
+    for p in (d.get('included') or []):
+        at = p.get('attributes') or {}
+        pools.append({'pool': at.get('address') or '', 'nome': at.get('name') or '',
+                      'vol_h24': float((at.get('volume_usd') or {}).get('h24') or 0),
+                      'preco_usd': float(at.get('base_token_price_usd') or 0)})
+    pools.sort(key=lambda x: -x['vol_h24'])
+    return {'nome': a.get('symbol') or ca[:8], 'preco_usd': float(a.get('price_usd') or 0),
+            'mcap_usd': float(a.get('fdv_usd') or 0), 'supply': float(a.get('normalized_total_supply') or 0),
+            'vol_h24': float((a.get('volume_usd') or {}).get('h24') or 0),
+            'graduado': bool(lp.get('completed')),
+            'pool': lp.get('migrated_destination_pool_address') or (pools[0]['pool'] if pools else ''),
+            'pools': pools}
+
+
 def ler_trades(pool):
     d = gecko(f'/pools/{pool}/trades')
     if not d or not d.get('data'):
@@ -250,6 +272,38 @@ def estimular(nome, ms, quem='ambos'):
         except Exception:
             pass
     return ok
+
+
+class SentidosGecko:
+    """Depois da graduacao os trades saem da curva e passam a acontecer no pool: o indexador vira a fonte.
+    Mesmo formato de trade do SentidosChain, para os estimulos e o replay nao mudarem."""
+    def __init__(self, pool, nome, eth_usd=0.0):
+        self.pool = self.curva = pool
+        self.nome = nome
+        self.preco_eth = 0.0
+        self.erro = ''
+        self.historico = deque(maxlen=600)
+        self.vistos = set()
+        trades = ler_trades(pool)
+        self.historico.extend(trades)
+        self.vistos.update(t['tx'] for t in trades)
+        self._preco(eth_usd)
+
+    def _preco(self, eth_usd):
+        if self.historico and eth_usd > 0:
+            self.preco_eth = (self.historico[-1].get('preco_usd') or 0) / eth_usd
+
+    def ler(self, eth_usd=0.0):
+        trades = ler_trades(self.pool)
+        novos = [t for t in trades if t['tx'] not in self.vistos]
+        self.vistos.update(t['tx'] for t in trades)
+        if len(self.vistos) > 6000:
+            self.vistos = set(t['tx'] for t in trades)
+        for t in novos:
+            t['fonte'] = 'pool'
+            self.historico.append(t)
+        self._preco(eth_usd)
+        return novos
 
 
 class Libido:
@@ -531,7 +585,9 @@ def main():
     libido = Libido()
     if os.environ.get('FLY_PAR'):
         Estocadas(libido).start()   # so quando a mosca tem par: estocadas batem nos cerebros no ritmo                      # cruzamento: compras sobem, vendas derrubam
-    sent = None                            # feed proprio dos sentidos (SentidosChain) ou None
+    sent = None                            # feed proprio dos sentidos (SentidosChain/SentidosGecko) ou None
+    ficha_token = None                     # ficha do token da mosca no indexador (preco, market cap, volume)
+    prox_ficha = 0.0
     sent_cfg = ''
     prox_sent_tentativa = 0.0
     ultima_sent = 0.0
@@ -732,7 +788,11 @@ def main():
                     if chain_leitura is None:
                         import pons
                         chain_leitura = pons.Pons()
-                    sent = SentidosChain(chain_leitura, cfg, eth_usd)
+                    f0 = ler_token(cfg)
+                    if f0 and f0['graduado'] and f0['pool']:
+                        sent = SentidosGecko(f0['pool'], f0['nome'], eth_usd); ficha_token = f0
+                    else:
+                        sent = SentidosChain(chain_leitura, cfg, eth_usd)
                     sent_cfg = cfg
                     historico.clear(); enderecos.clear(); replay_fila.clear(); precos_sent.clear()
                     historico.extend(sent.historico)                 # trades recentes da chain: material do replay
@@ -747,6 +807,22 @@ def main():
                 sent, sent_cfg = None, ''
                 historico.clear(); enderecos.clear(); replay_fila.clear()
                 publicar({'classe': 'info', 'texto': f'it feels the trades of {pool["nome"]} again'})
+        if cfg and agora >= prox_ficha:         # ficha do token da mosca e mudanca de curva para pool
+            prox_ficha = agora + 60
+            f = ler_token(cfg)
+            if f:
+                ficha_token = f
+                if f['graduado'] and f['pool'] and getattr(sent, 'pool', None) != f['pool']:
+                    try:
+                        sent = SentidosGecko(f['pool'], f['nome'], eth_usd)
+                        sent_cfg = cfg
+                        historico.clear(); enderecos.clear(); replay_fila.clear(); precos_sent.clear()
+                        historico.extend(sent.historico)
+                        enderecos.update(t['de'] for t in sent.historico)
+                        print(f'[mercado] {f["nome"]} graduou da curva: sentidos passam para o pool {f["pool"][:12]}', flush=True)
+                        publicar({'classe': 'info', 'texto': f'{f["nome"]} graduated from the curve · it now feels every trade in the new pool'})
+                    except Exception as e:
+                        print(f'[mercado] pool pos-graduacao falhou: {str(e)[:80]}', flush=True)
         if sent is not None and agora - ultima_sent >= SENTIDOS_INTERVALO:
             ultima_sent = agora
             novos = sent.ler(eth_usd)
@@ -899,6 +975,11 @@ def main():
                       'endereco': carteira.endereco, 'reserva_gas_eth': RESERVA_GAS_ETH if MODO == 'real' else 0,
                       'ordens_ativas': bool(ativas),
                       'sentidos': sent.nome if sent is not None else pool['nome'],
+                      'mcap_usd': (ficha_token or {}).get('mcap_usd', 0),
+                      'preco_token_usd': (ficha_token or {}).get('preco_usd', 0),
+                      'vol_token_h24': (ficha_token or {}).get('vol_h24', 0),
+                      'graduado': (ficha_token or {}).get('graduado', False),
+                      'supply_token': (ficha_token or {}).get('supply', 0),
                       'sentidos_fonte': 'chain' if sent is not None else 'gecko',
                       'sentidos_erro': (sent.erro if sent is not None else ''),
                       'quieto_s': round(agora - ultimo_trade_real), 'replay': REPLAY and agora - ultimo_trade_real > 90})
