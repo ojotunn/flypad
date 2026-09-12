@@ -239,7 +239,7 @@ function aplicarConfig(c){   // CA e X ao vivo (POST /api/config no PC -> relay 
 const EXPLORER='https://robinhoodchain.blockscout.com';
 const curto=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
 function copiar(id, txtId, valor){ if(!valor) return; navigator.clipboard.writeText(valor).then(()=>{ $(id).classList.add('copiado'); $(txtId).textContent='copied'; setTimeout(()=>{ $(id).classList.remove('copiado'); $(txtId).textContent=curto(valor); },1500); }); }
-window.addEventListener('DOMContentLoaded',()=>{ if(CA){ $('caTxt').textContent=curto(CA); } else { $('ca').classList.add('vazio'); } if(X_URL) $('xLink').href=X_URL; else $('xLink').style.display='none'; $('ca').onclick=()=>copiar('ca','caTxt',ca); $('wal').onclick=()=>copiar('wal','walTxt',carteira); });
+window.addEventListener('DOMContentLoaded',()=>{ if(CA){ $('caTxt').textContent=curto(CA); } else { $('ca').classList.add('vazio'); } if(X_URL) $('xLink').href=X_URL; else $('xLink').style.display='none'; $('ca').onclick=()=>copiar('ca','caTxt',ca); });
 // versao da pagina: se o servidor publicar outra, recarrega sozinha (aba antiga nao entende quadro novo)
 let versaoPagina='';
 async function checarVersao(){ try{ const v=(await (await fetch('/api/versao',{cache:'no-store'})).text()).trim(); if(!v||v.length>20) return; if(!versaoPagina) versaoPagina=v; else if(v!==versaoPagina) location.reload(); }catch(e){} }
