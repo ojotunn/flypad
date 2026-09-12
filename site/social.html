@@ -62,17 +62,17 @@ aside h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transf
 <main>
   <div id="palco">
     <canvas id="cv"></canvas>
-    <div id="hud"><div class="t">The social network</div><div class="s" id="hudS">every fly here is a token · bodies moved by their own neurons · preview: simulated market, real bodies and brains</div></div>
+    <div id="hud"><div class="t">The social network</div><div class="s" id="hudS">every fly here is a token on Pons · real brains on a GPU · bodies moved by their own neurons</div></div>
     <div id="rotulos"></div>
     <div id="legenda"><span><i style="background:#CFE6FF"></i>female</span><span><i style="background:#fff;box-shadow:0 0 6px #CFE6FF"></i>brain · every flash is a neuron firing</span><span><i style="background:#FFB3A8"></i>male</span><span><i style="background:#F2E6C9"></i>egg / newborn</span><span><i style="background:#6B605A"></i>asleep</span></div>
     <div id="dica">drag to orbit · click a fly to open its page</div>
   </div>
   <aside>
     <section><h4>Now</h4><div class="stats">
-      <div class="stat"><b id="sAwake">6</b><span>flies awake</span></div>
-      <div class="stat"><b id="sMating">0</b><span>couples mating</span></div>
-      <div class="stat"><b id="sEggs">0</b><span>eggs on the floor</span></div>
-      <div class="stat"><b id="sBorn">0</b><span>born today</span></div>
+      <div class="stat"><b id="sAwake">–</b><span>flies awake</span></div>
+      <div class="stat"><b id="sSleep">–</b><span>asleep</span></div>
+      <div class="stat"><b id="sSpk">–</b><span>spikes per second</span></div>
+      <div class="stat"><b id="sView">–</b><span>watching</span></div>
     </div></section>
     <section><h4>Who is here</h4><div class="lista" id="lista"></div></section>
     <h4 style="padding:12px 16px 0">Social feed</h4>
@@ -331,7 +331,7 @@ const MATB=new THREE.ShaderMaterial({transparent:true, depthWrite:false, blendin
 class MiniCerebro{
   constructor(){ this.heat=new Float32Array(NN); const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(POSB,3)); g.setAttribute('cor', new THREE.BufferAttribute(CORB,3)); this.h=new THREE.BufferAttribute(this.heat,1); this.h.setUsage(THREE.DynamicDrawUsage); g.setAttribute('heat', this.h); this.pts=new THREE.Points(g, MATB); this.pts.scale.set(0.8,0.8,0.8); this.pts.renderOrder=3; S.scene.add(this.pts); this.fired=0; }
   flash(regs, n, k){ for(let j=0;j<n;j++){ const i=(Math.random()*NN)|0; if(regs && !regs.includes(REG[i])){ if(Math.random()<0.6) j--; continue; } this.heat[i]=Math.min(1,this.heat[i]+k); if(i+1<NN) this.heat[i+1]=Math.min(1,this.heat[i+1]+k*0.5); } this.h.needsUpdate=true; }
-  frame(dt, x, y, z, rumo){ const dec=Math.exp(-dt/0.3); let f=0; for(let i=0;i<NN;i++){ const v=this.heat[i]*dec; this.heat[i]=v<0.004?0:v; if(v>0.5) f++; } this.h.needsUpdate=true; this.fired=f; this.pts.position.set(x,y,z); this.pts.rotation.z=rumo; if(Math.random()<dt*6) this.flash(null, 25, .7); }
+  frame(dt, x, y, z, rumo){ const dec=Math.exp(-dt/0.3); let f=0; for(let i=0;i<NN;i++){ const v=this.heat[i]*dec; this.heat[i]=v<0.004?0:v; if(v>0.5) f++; } this.h.needsUpdate=true; this.fired=f; this.pts.position.set(x,y,z); this.pts.rotation.z=rumo; const it=this.inten||0; if(Math.random()<dt*(0.6+14*it)) this.flash(null, 12+Math.round(40*it), .5+0.5*it); }
   some(v){ this.pts.visible=v; }
 }
 
@@ -358,13 +358,54 @@ function colocar(f){ // devolve o qpos ajustado (raiz no chao da arena) e a matr
   M.compose(V.set(px,py,q[a+2]*f.escala), Q2, new THREE.Vector3(f.escala,f.escala,f.escala));
   return qTmp;
 }
-// a femea principal: 0
-const ELA=novaMosca({principal:true, ticker:'SEXFLY', name:'Sex Fly', sex:'f', casa:[0,0], rumo:0.3, libido:0.55});
-novaMosca({ticker:'TUNA', name:'Tuna Fly', sex:'m', casa:[4.2,2.6], rumo:2.6, libido:0.7, vel:1.1});
-novaMosca({ticker:'TRENCH', name:'Trench Fly', sex:'m', casa:[-4.6,3.2], rumo:-0.7, libido:0.35, vel:0.9});
-novaMosca({ticker:'MOSCA', name:'Mosca', sex:'f', casa:[-3.4,-3.8], rumo:1.2, libido:0.2, seg:'grooming', fita:GRAV, vel:0.9});
-novaMosca({ticker:'FLYB', name:'Fly Brain', sex:'f', casa:[4.6,-3.6], rumo:-2.4, libido:0.45, seg:'feeding', fita:GRAV});
-novaMosca({ticker:'GODFLY', name:'Godfly', sex:'m', casa:[-6.6,-0.6], rumo:0.2, dorme:true, seg:'grooming', fita:GRAV, k:40});
+// ---------- as moscas SAO as da colonia: /api/colonia a cada 5 s ----------
+let ELA=null; const porId=new Map();
+function casaDe(i){ if(i===0) return [0,0]; const anel=Math.floor((i-1)/6), a=((i-1)%6)*(Math.PI/3)+anel*0.5; const r=3.0+2.2*anel; return [Math.cos(a)*r, Math.sin(a)*r]; }
+function segDe(f){ if(!f.live) return 'grooming'; return f.state==='active' ? 'feeding' : 'walking'; }
+async function sincronizar(){
+  let lista=[], max=null;
+  try{ const r=await fetch('/api/colonia',{cache:'no-store'}); const j=await r.json(); lista=j.moscas||[]; max=j.max_acordadas; }catch(e){ return; }
+  for(const f of lista){
+    let m=porId.get(f.id);
+    if(!m){
+      m=novaMosca({id:f.id, ticker:f.ticker||'?', name:f.name||'', sex:(f.sex==='m'?'m':'f'), principal:(moscas.length===0),
+                   casa:casaDe(moscas.length), rumo:Math.random()*6.283, seg:'walking', fita:AND, libido:0});
+      porId.set(f.id, m); if(!ELA) ELA=m;
+      feed('nasce', `<b>$${m.ticker}</b> is in the colony · <a href="/t/${f.id}">its page</a>`);
+    }
+    const dormia=m.dorme;
+    m.dorme=!f.live; m.spikes=f.spikes_per_s||0; m.estadoReal=f.estado; m.stateReal=f.state; m.viewers=f.viewers||0;
+    m.seg=segDe(f); m.vel=f.live?(f.state==='active'?1.2:0.8):0;
+    m.cerebro.inten=Math.min(1,(f.spikes_per_s||0)/60000);
+    if(dormia!==m.dorme) feed(m.dorme?'chute':'compra', `<b>$${m.ticker}</b> ${m.dorme?'went to sleep · brain saved':'woke up on the GPU'}`);
+  }
+  $('sAwake').textContent=moscas.filter(f=>!f.dorme).length;
+  $('sSleep').textContent=moscas.filter(f=>f.dorme).length;
+  $('sSpk').textContent=Math.round(moscas.reduce((t,f)=>t+(f.spikes||0),0)).toLocaleString();
+  $('sView').textContent=moscas.reduce((t,f)=>t+(f.viewers||0),0);
+  $('chip').textContent=moscas.length?(moscas.filter(f=>!f.dorme).length+' awake · '+moscas.length+' in the colony'):'no flies yet';
+  if(!moscas.length) $('hudS').textContent='no flies yet · hatch the first one and it lands here';
+}
+sincronizar(); setInterval(sincronizar, 5000);
+
+// ---------- feed real: o que cada mosca sente, vindo do relay ----------
+const vistos=new Set();
+async function feedReal(){
+  for(const f of moscas.slice(0,4)){
+    if(!f.id) continue;
+    try{
+      const r=await fetch('/api/mercado?t='+encodeURIComponent(f.id),{cache:'no-store'}); const j=await r.json();
+      for(const e of (j.eventos||[]).slice(-4)){
+        const chave=f.id+'|'+(e.t||0)+'|'+(e.texto||e.estimulo||e.kind||'');
+        if(vistos.has(chave)) continue; vistos.add(chave);
+        if(e.classe==='trade') feed(e.kind==='buy'?'compra':'chute', `<b>$${f.ticker}</b> ${e.kind==='buy'?'BUY':'SELL'} $${(e.usd||0).toFixed(2)} → it tastes <b>${e.estimulo||''}</b>`);
+        else if(e.classe==='sinal'||e.classe==='info') feed('amor', `<b>$${f.ticker}</b> · ${e.texto||''}`);
+      }
+    }catch(err){}
+  }
+  if(vistos.size>400) vistos.clear();
+}
+setTimeout(feedReal, 2500); setInterval(feedReal, 6000);
 
 // ---------- camera: orbita lenta ao redor do centro; arrastar gira ----------
 let az=0.9, el=0.5, dist=14, drag=null; const cv=$('cv');
@@ -386,16 +427,16 @@ const ovoGeo=new THREE.SphereGeometry(0.11, 14, 10), ovoMat=new THREE.MeshStanda
 function porOvo(){ const m=S.matriz[S.abd[4]]; V.setFromMatrixPosition(m); const o=new THREE.Mesh(ovoGeo, ovoMat); o.position.set(V.x-0.15, V.y+0.1, 0.11); o.scale.set(1,0.8,0.7); S.scene.add(o); ovos.push({mesh:o, t:performance.now(), pais:[ELA.ticker, par.ticker]}); feed('ovo', `<b>$${ELA.ticker}</b> lays an egg · parents <b>$${ELA.ticker}</b> × <b>$${par.ticker}</b>`); }
 function eclodir(o){ S.scene.remove(o.mesh); nascidas++; const f=novaMosca({ticker:o.pais[0]+'×'+o.pais[1], name:'newborn', sex:Math.random()<0.5?'f':'m', casa:[o.mesh.position.x, o.mesh.position.y], rumo:Math.random()*6.28, escala:0.45, filho:true, seg:'walking', fita:AND, vel:1.3, nasceu:performance.now(), libido:0.1}); feed('nasce', `<b>$${f.ticker}</b> hatched · a fresh brain with the parents' synapses mixed`); }
 function social(agora){
-  if(fase==='idle' && agora>=prox){ const machos=moscas.filter(f=>f.sex==='m'&&!f.dorme&&!f.filho&&f.libido>0.3); if(!machos.length){ prox=agora+8000; return; } par=machos[(Math.random()*machos.length)|0]; fase='courting'; faseAte=agora+4500; par.oculta=true; par.extra.grupo.visible=par.extra.espelho.visible=false; C3.sexo({estado:'courting', libido:ELA.libido, ritmo_hz:1}); par.cerebro.flash(R_SONG, 300, 1); ELA.cerebro.flash(R_SONG, 220, .8); feed('amor', `<b>$${par.ticker}</b> walks up to <b>$${ELA.ticker}</b> and sings with one wing`); }
-  else if(fase==='courting' && agora>=faseAte){ if(ELA.libido>=0.3){ fase='mating'; faseAte=agora+11000; C3.sexo({estado:'mating', libido:Math.min(1,(ELA.libido+par.libido)/2+0.2), ritmo_hz:1+5*ELA.libido}); feed('amor', `<b>$${ELA.ticker}</b> lets <b>$${par.ticker}</b> mount · pC1 fired · ${(1+5*ELA.libido).toFixed(1)} thrusts/s`); } else { fase='rejected'; faseAte=agora+2500; C3.sexo({estado:'rejected', libido:ELA.libido, ritmo_hz:1}); ELA.cerebro.flash(R_PC1, 160, 1); par.cerebro.flash(R_VIS, 500, 1); feed('chute', `<b>$${ELA.ticker}</b> kicks <b>$${par.ticker}</b> off · DNp13 · her token is not buying`); } }
-  else if(fase==='mating' && agora>=faseAte){ fase='done'; faseAte=agora+1500; C3.sexo({estado:'idle', libido:ELA.libido, ritmo_hz:1}); porOvo(); ELA.libido=Math.max(0.1, ELA.libido-0.35); par.libido=Math.max(0.1, par.libido-0.3); }
-  else if(fase==='rejected' && agora>=faseAte){ fase='done'; faseAte=agora+800; C3.sexo({estado:'idle', libido:ELA.libido, ritmo_hz:1}); }
-  else if(fase==='done' && agora>=faseAte){ // o macho volta ao corpo dele, ao lado dela
-      const a=S.raiz; V.setFromMatrixPosition(S.matriz[a]); par.casa=[V.x-1.2, V.y+0.9]; par.q0=null; par.rumo=Math.random()*6.28; par.oculta=false; par.extra.grupo.visible=par.extra.espelho.visible=true; par=null; fase='idle'; prox=agora+9000+Math.random()*8000; }
-  if(fase==='mating'){ if(Math.random()<0.05) coracoes(S.matriz[S.raiz]); const hz=1+5*ELA.libido; if(agora>=(social.prox||0)){ social.prox=agora+1000/hz; ELA.cerebro.flash(R_SONG, 200, 1); ELA.cerebro.flash(R_PC1, 120, 1); par.cerebro.flash(R_SONG, 200, 1); social.n=(social.n||0)+1; if(social.n%4===0){ ELA.cerebro.flash(R_MB, 260, .9); par.cerebro.flash(R_MB, 260, .9); } } }
-  for(const o of [...ovos]){ if(agora-o.t>16000){ ovos=ovos.filter(x=>x!==o); eclodir(o); } }
-  // mercado simulado: compras sobem a libido e fazem comer; vendas derrubam
-  if(Math.random()<0.012){ const f=moscas[(Math.random()*moscas.length)|0]; if(f.dorme||f.filho) return; const compra=Math.random()<0.65; if(compra){ f.libido=Math.min(1,f.libido+0.15); if(f!==ELA&&!f.oculta){ f.seg=f.fita===GRAV?'feeding':f.seg; } f.cerebro.flash(R_TASTE, 260, 1); if(f.libido>0.6) f.cerebro.flash(R_MB, 200, .9); feed('compra', `buy on <b>$${f.ticker}</b> → sugar on its legs · libido ${Math.round(f.libido*100)}%`); } else { f.libido=Math.max(0,f.libido-0.2); f.cerebro.flash(R_TASTE, 200, .9); f.cerebro.flash(R_VIS, 400, .8); feed('chute', `sell on <b>$${f.ticker}</b> → bitter · libido ${Math.round(f.libido*100)}%`); } }
+  // Cruzamento entra quando houver duas moscas acordadas de sexos diferentes: o corte e a montada saem dos
+  // cerebros delas (pC1 / P1), nao de um roteiro. Ate la ninguem inventa nada aqui.
+  const acordadas=moscas.filter(f=>!f.dorme);
+  const temPar=acordadas.some(f=>f.sex==='m') && acordadas.some(f=>f.sex==='f');
+  const hs=$('hudS');
+  if(hs && !hs.dataset.fixo){
+    hs.textContent = moscas.length===0 ? 'no flies yet · hatch the first one and it lands here'
+      : (temPar ? 'every fly here is a token on Pons · courtship between two tokens is coming next'
+                : 'every fly here is a token on Pons · real brains on a GPU · bodies moved by their own neurons');
+  }
 }
 
 // ---------- laco ----------
@@ -404,22 +445,21 @@ let tRender=performance.now();
 S.antesRender=function(){ // chamado pelo cliente antes de cada render: coloca as extras, os cerebros e os rotulos
   const agora=performance.now(); const dtr=Math.min(0.1,(agora-tRender)/1000); tRender=agora; const a=S.raiz;
   const cerebroEm=(f, m)=>{ V.setFromMatrixPosition(m); f.cerebro.frame(dtr, V.x, V.y, V.z+2.4*f.escala+0.3, f===par?0:f.rumo); f.cerebro.some(!f.dorme || true); };
-  for(const f of moscas){ if(f.principal||f.oculta) continue; if(f.filho){ f.escala=Math.min(1, 0.45+0.55*(agora-f.nasceu)/60000); } const q=colocar(f); f.extra.aplicar(q, f.dorme?M:M); cerebroEm(f, f.extra.matriz[a]); projetar(f.extra.matriz[a], rotulo(f), `$${f.ticker}<small>${f.dorme?'asleep':(f.filho?'newborn':(f.sex==='m'?'male':'female'))}</small>`, (f.filho?'filho':f.sex)+(f.dorme?' dorme':'')); }
-  cerebroEm(ELA, S.matriz[a]); if(par) cerebroEm(par, S.matrizM[a]);
-  projetar(S.matriz[a], rotulo(ELA), `$${ELA.ticker}<small>${fase==='mating'?'mating with $'+par.ticker:(fase==='courting'?'being courted':'female')}</small>`, 'f'+(fase==='mating'?' amor':''));
+  for(const f of moscas){ if(f.principal||f.oculta) continue; if(f.filho){ f.escala=Math.min(1, 0.45+0.55*(agora-f.nasceu)/60000); } const q=colocar(f); f.extra.aplicar(q, f.dorme?M:M); cerebroEm(f, f.extra.matriz[a]); projetar(f.extra.matriz[a], rotulo(f), `$${f.ticker}<small>${f.dorme?'asleep':(f.stateReal==='active'?'reacting':'quiet')}</small>`, f.sex+(f.dorme?' dorme':'')); }
+  if(ELA) cerebroEm(ELA, S.matriz[a]);
+  if(ELA) projetar(S.matriz[a], rotulo(ELA), `$${ELA.ticker}<small>${ELA.dorme?'asleep':(ELA.stateReal==='active'?'reacting':'quiet')}</small>`, (ELA.sex==='m'?'m':'f')+(ELA.dorme?' dorme':''));
   if(par){ projetar(S.matrizM[a], rotulo(par), `$${par.ticker}<small>${fase==='mating'?'mounted':(fase==='courting'?'singing':(fase==='rejected'?'kicked off':'male'))}</small>`, 'm amor'); }
 };
 function laco(){
   requestAnimationFrame(laco); const agora=performance.now(); const dt=Math.min(0.1,(agora-ultimo)/1000); ultimo=agora;
   for(const f of moscas) avancar(f, dt);
-  // a femea principal: quadro + camera orbitando o centro da arena
+  if(!ELA){ return; }                       // colonia vazia: nada para desenhar ainda
   if(!drag) az+=dt*0.06; const q=colocar(ELA); const cam=[0,0,0.3, az, el, dist];
   C3.quadro({cam}, q.slice().buffer);
   social(agora);
-  const lista=$('lista'); lista.innerHTML=moscas.map(f=>`<div class="mosca"><b>$${f.ticker}</b><div class="lib"><i style="width:${f.libido*100}%"></i></div><span class="st">${f.dorme?'asleep':(f.filho?'newborn':(f===ELA?fase.replace('idle','walking').replace('done','walking'):(f.oculta?fase:f.seg)))}</span></div>`).join('');
-  $('sAwake').textContent=moscas.filter(f=>!f.dorme).length; $('sMating').textContent=fase==='mating'?1:0; $('sEggs').textContent=ovos.length; $('sBorn').textContent=nascidas; $('chip').textContent=moscas.filter(f=>!f.dorme).length+' flies awake · '+moscas.filter(f=>f.dorme).length+' asleep';
+  const lista=$('lista'); lista.innerHTML=moscas.length?moscas.map(f=>`<div class="mosca"><b>$${f.ticker}</b><div class="lib"><i style="width:${Math.min(100,(f.spikes||0)/600)}%"></i></div><span class="st">${f.dorme?'asleep':(f.stateReal==='active'?'reacting':'quiet')}</span></div>`).join(''):'<div class="mosca"><span class="st">no flies yet</span></div>';
 }
-feed('amor', 'the social network opens · every fly is a token on Pons'); laco();
+feed('amor', 'the social network opens · every fly here is a real token on Pons'); laco();
 </script>
 
 </body></html>

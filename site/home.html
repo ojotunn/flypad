@@ -11,6 +11,7 @@
 :root{--ground:#0B0908;--panel:#151110;--line:#2B2420;--line2:#3A302A;--ink:#F3ECE3;--muted:#9C8E84;--dim:#6B605A;--eye:#FF4E2A;--eye2:#FF7A5C;--flash:#CFE6FF;--good:#7BD88F;--bad:#FF6A5C;--heart:#FF5FA2;
 --display:'Bricolage Grotesque',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',Consolas,monospace}
 *{box-sizing:border-box}html{color-scheme:dark}
+[hidden]{display:none!important}   /* .field usa display:grid e vencia o hidden: o campo do CA aparecia no modo de lancamento */
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:inherit}button{font:inherit;color:inherit;cursor:pointer}:focus-visible{outline:2px solid var(--eye);outline-offset:2px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
