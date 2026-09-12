@@ -23,6 +23,11 @@ RAIZ = Path(__file__).resolve().parent.parent
 SITE = RAIZ / 'site'
 FILA_MAX = 6
 MAX_MOSCAS = int(os.environ.get('FLY_MAX_MOSCAS', '200'))
+IMG_DIR = Path(os.environ.get('FLY_IMG_DIR', '/app/data/img'))   # logos enviados pelo site
+try:
+    IMG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    IMG_DIR = Path('/tmp/flypad-img'); IMG_DIR.mkdir(parents=True, exist_ok=True)
 PLATAFORMA = os.environ.get('FLY_PLATAFORMA', '')          # carteira do FLY PAD: recebe a taxa de lancamento
 TAXA_ETH = os.environ.get('FLY_TAXA_ETH', '0')             # 0 = hatch de graca (fase de teste)
 
@@ -229,6 +234,29 @@ async def api_colonia(request):
                               'pendentes': len(d['fila'])})
 
 
+async def api_imagem(request):
+    """Logo do token: recebe uma imagem em base64 (ja recortada pelo navegador) e devolve a URL publica dela."""
+    import base64
+    try:
+        j = await request.json()
+    except Exception:
+        raise web.HTTPBadRequest(text='json')
+    dado = str(j.get('data', ''))
+    if not dado.startswith('data:image/'):
+        raise web.HTTPBadRequest(text='send an image')
+    cabeca, _, b64 = dado.partition(',')
+    ext = 'png' if 'png' in cabeca else ('webp' if 'webp' in cabeca else 'jpg')
+    try:
+        bruto = base64.b64decode(b64, validate=True)
+    except Exception:
+        raise web.HTTPBadRequest(text='broken image')
+    if len(bruto) > 600_000:
+        raise web.HTTPBadRequest(text='image too big (max 600 KB after the crop)')
+    nome = hashlib.sha256(bruto).hexdigest()[:16] + '.' + ext
+    (IMG_DIR / nome).write_bytes(bruto)
+    return web.json_response({'url': str(request.url.origin()) + '/img/' + nome, 'bytes': len(bruto)})
+
+
 async def api_config(request):
     """O que a pagina precisa saber para lancar: taxa do FLY PAD e para onde ela vai."""
     return web.json_response({'taxa_eth': TAXA_ETH, 'plataforma': PLATAFORMA, 'chain_id': 4663})
@@ -420,6 +448,8 @@ def main():
     app.router.add_post('/api/hatch/ca', api_hatch_ca)
     app.router.add_get('/api/mosca', api_mosca)
     app.router.add_get('/api/config', api_config)
+    app.router.add_post('/api/imagem', api_imagem)
+    app.router.add_static('/img', IMG_DIR, show_index=False)
     app.router.add_get('/fila_ca', fila_ca_get)
     app.router.add_post('/fila_ca/feito', fila_ca_feito)
     app.router.add_get('/api/estado', api_estado)
