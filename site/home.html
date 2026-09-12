@@ -89,7 +89,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
 <main>
   <section id="hero"><div class="wrap">
     <div>
-      <p class="label" style="margin:0 0 14px">Robinhood Chain · Pons · test phase, hatching is free</p>
+      <p class="label" style="margin:0 0 14px" id="eyebrow">Robinhood Chain · Pons · a fly for every coin</p>
       <h1>Every coin you launch <em>becomes a fly.</em></h1>
       <p class="lede">Not a mascot. A whole fruit-fly brain, <b>138,639 neurons</b>, simulated live on a GPU, with your token's trades wired into its senses. A buy is sugar on its legs. A sell is bitter. A big sell is a shadow overhead. It feeds, backs away, freezes, and soon it will <b>court the flies of other tokens</b>. Nobody writes its behavior.</p>
       <div class="cta"><a class="btn primary" href="#hatch">Hatch a fly</a><a class="btn" href="/social">Watch the social network</a><a class="btn" href="#colony">See the colony</a></div>
@@ -138,7 +138,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
         <div class="fee modo-launch"><span>Pons launch fee</span><b id="feeLaunch">reading…</b></div>
         <div class="fee modo-launch" style="border-top:0;padding-top:0"><span>FLY PAD hatch fee</span><b id="feeHatch">reading…</b></div>
         <div class="fee modo-launch" style="border-top:0;padding-top:0"><span>creator fees on every trade</span><b>yours · they go to the wallet that signs</b></div>
-        <div class="fee modo-ca" hidden><span>hatching · test phase</span><b>free</b></div>
+        <div class="fee modo-ca" hidden><span>FLY PAD hatch fee</span><b id="feeCa">free</b></div>
         <div class="fee" style="border-top:0;padding-top:0"><span>brain time</span><b>boots in about 2 minutes</b></div>
         <button class="btn primary" type="submit" id="btnHatch" style="justify-self:start">Connect wallet and launch</button>
         <div class="msg" id="hatchMsg"></div>
@@ -167,7 +167,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
       <div class="step"><div class="k">Colony</div><h3>Flies share one GPU</h3><p>A few flies are awake at a time. A quiet fly sleeps with its synapses saved and wakes when its turn comes. Courtship between tokens is the next step.</p></div>
     </div>
     <div class="econ">
-      <div><b id="econFee">free</b><span>hatch fee · test phase</span></div>
+      <div><b id="econFee">free</b><span>hatch fee</span></div>
       <div><b id="eMax">6</b><span>flies awake per GPU</span></div>
       <div><b>120 / s</b><span>brain steps, capped to share the GPU</span></div>
       <div><b>sleep, not death</b><span>quiet fly saves its synapses</span></div>
@@ -202,7 +202,6 @@ function desenhar(){
 }
 async function puxar(){ try{ const r=await fetch('/api/colonia',{cache:'no-store'}); dados=await r.json(); desenhar(); }catch(e){ $('liveCount').textContent='colony offline'; } }
 puxar(); setInterval(puxar, 4000);
-setTimeout(()=>{ const v=Number(cfg.taxa_eth||0); const e=$('econFee'); if(e) e.textContent = v>0 ? v+' ETH' : 'free'; }, 1500);
 // ---------- hatch: lancar na Pons pela pagina (a carteira da pessoa assina) ou colar um CA ----------
 // A casa cobra so a taxa de lancamento (se houver). As creator fees do token ficam com quem lanca.
 const CHAIN={id:4663, hex:'0x1237', name:'Robinhood Chain', rpc:'https://rpc.mainnet.chain.robinhood.com', explorer:'https://robinhoodchain.blockscout.com'};
@@ -213,7 +212,12 @@ const ABI_R=[`function launchAndBuy(${TUPLE} params,uint256 launchConfigId,addre
 let modo='launch'; const leitor=new ethers.JsonRpcProvider(CHAIN.rpc, CHAIN.id, {staticNetwork:true}); let termos=null, cfg={taxa_eth:'0', plataforma:''};
 function aplicarModo(){ document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.modo===modo)); document.querySelectorAll('.modo-launch').forEach(e=>e.hidden=modo!=='launch'); document.querySelectorAll('.modo-ca').forEach(e=>e.hidden=modo!=='ca'); $('fCa').required=modo==='ca'; $('btnHatch').textContent=modo==='launch'?'Connect wallet and launch':'Hatch this fly'; }
 document.querySelectorAll('.aba').forEach(b=>b.addEventListener('click', ()=>{ modo=b.dataset.modo; aplicarModo(); })); aplicarModo();
-async function lerConfig(){ try{ cfg=await (await fetch('/api/config',{cache:'no-store'})).json(); }catch(e){} const v=Number(cfg.taxa_eth||0); const el=$('feeHatch'); if(el) el.textContent = v>0 ? v+' ETH' : 'free while in test'; }
+async function lerConfig(){ try{ cfg=await (await fetch('/api/config',{cache:'no-store'})).json(); }catch(e){}
+  const v=Number(cfg.taxa_eth||0);
+  const el=$('feeHatch'); if(el) el.textContent = v>0 ? v+' ETH' : 'free while in test';
+  const eb=$('eyebrow'); if(eb) eb.textContent='Robinhood Chain · Pons · '+(v>0 ? v+' ETH to hatch a fly' : 'test phase, hatching is free');
+  const ef=$('econFee'); if(ef) ef.textContent = v>0 ? v+' ETH' : 'free';
+  const fc=$('feeCa'); if(fc) fc.textContent = v>0 ? v+' ETH' : 'free'; }
 async function lerTermos(){ try{ const f=new ethers.Contract(FACTORY, ABI_F, leitor); const [fee, eco, aberto]=await Promise.all([f.launchFee(), f.previewLaunchEconomics(0, ZERO), f.launchEnabled()]); termos={fee, eco, aberto}; $('feeLaunch').textContent=ethers.formatEther(fee)+' ETH + gas'+(aberto?'':' · pons is whitelisting launchers right now'); }catch(e){ $('feeLaunch').textContent='could not read pons terms'; } }
 lerConfig(); lerTermos();
 // imagem: recorta para 512x512 no navegador e hospeda no FLY PAD; o endereco entra no campo logo do token
