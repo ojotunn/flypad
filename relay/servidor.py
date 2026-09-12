@@ -375,6 +375,8 @@ async def pagina_mosca(request):
     html = html.replace("const FLY_ID='';", f"const FLY_ID='{escapar_js(quem)}';", 1)
     html = html.replace("const FLY_NOME='';", f"const FLY_NOME='{escapar_js(f.get('name'))}';", 1)
     html = html.replace("const FLY_TICKER='';", f"const FLY_TICKER='{escapar_js(f.get('ticker'))}';", 1)
+    html = html.replace("const FLY_SEX='';", f"const FLY_SEX='{escapar_js(f.get('sex'))}';", 1)
+    html = html.replace("const FLY_DEV='';", f"const FLY_DEV='{escapar_js(f.get('fee_recipient') or f.get('launcher'))}';", 1)
     ca = escapar_js(cfg.get('ca') or f.get('ca'))
     x = escapar_js(cfg.get('x') or f.get('x'))
     if ca:

@@ -3,21 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FLY BRAIN — a whole fly brain, live</title>
-<meta name="description" content="138,639 real neurons of a fruit-fly brain simulated live on one GPU. Pons trades on Robinhood Chain are her senses; her reflexes place the orders. No AI agent, no script.">
-<link rel="canonical" href="https://www.flybrain.finance/">
+<title>FLY PAD — a fly with a whole brain</title>
+<meta name="description" content="138,639 real neurons of a fruit-fly brain simulated live on one GPU. The trades of one token on Robinhood Chain are its senses. No AI agent, no script, no orders.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="FLY">
-<meta property="og:title" content="FLY BRAIN — a whole fly brain, alive on Robinhood Chain">
-<meta property="og:description" content="138,639 real neurons simulated live. Pons trades are her senses; her reflexes place the orders. No AI agent, no script, her own wallet.">
-<meta property="og:url" content="https://www.flybrain.finance/">
-<meta property="og:image" content="https://www.flybrain.finance/static/og.png">
+<meta property="og:site_name" content="FLY PAD">
+<meta property="og:title" content="FLY PAD — a coin with a whole fly brain">
+<meta property="og:description" content="138,639 real neurons simulated live. The token's trades are its senses. No AI agent, no script.">
+<meta property="og:image" content="/static/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FLY BRAIN — a whole fly brain, alive on Robinhood Chain">
-<meta name="twitter:description" content="138,639 real neurons simulated live. Pons trades are her senses; her reflexes place the orders. No AI agent.">
-<meta name="twitter:image" content="https://www.flybrain.finance/static/og.png">
+<meta name="twitter:title" content="FLY PAD — a coin with a whole fly brain">
+<meta name="twitter:description" content="138,639 real neurons simulated live. The token's trades are its senses. No AI agent.">
+<meta name="twitter:image" content="/static/og.png">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23000'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%23f4d36a'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%238fb0ff' stroke-opacity='.6' stroke-width='2'/%3E%3C/svg%3E">
 <style>
@@ -118,13 +116,14 @@ details p{margin:10px 0 0;line-height:1.55}
 <div id="app">
   <div id="topo">
     <a class="marca" href="/" style="text-decoration:none">FLY PAD</a><span class="marca" id="marcaMosca" style="margin-left:6px"></span>
-    <span class="tag">a whole fly brain, alive on Robinhood Chain</span>
+    <span class="tag" id="tagMosca">a whole fly brain, alive on Robinhood Chain</span>
     <span class="live" id="liveTop"><i></i><span id="liveTxt">CONNECTING</span></span>
     <div class="dir">
       <span id="viewersTop" class="tag"></span>
       <span class="ca" id="ca" title="contract address"><span>CA</span><b id="caTxt">not launched yet</b></span>
-      <span class="ca" id="wal" title="her own wallet on Robinhood Chain · click to copy"><span>HER WALLET</span><b id="walTxt">…</b></span>
       <a href="#" id="xLink">X</a>
+      <a class="btn" href="/" style="text-decoration:none">COLONY</a>
+      <a class="btn" href="/social" style="text-decoration:none">SOCIAL</a>
       <span class="btn" onclick="document.getElementById('sobre').classList.add('on')">ABOUT</span>
       <span class="btn cinema" onclick="document.getElementById('app').classList.toggle('cinema');setTimeout(resize,50)">CINEMA &middot; C</span>
     </div>
@@ -132,31 +131,30 @@ details p{margin:10px 0 0;line-height:1.55}
   <div id="sobre">
     <span class="fechar" onclick="document.getElementById('sobre').classList.remove('on')">CLOSE &middot; ESC</span>
     <div class="cx">
-      <h1>About FLY</h1>
-      <p class="lede">A real fruit-fly brain, all 138,639 neurons of it, simulated live on one graphics card. Her senses are the trades on Pons. Her reflexes place the orders. Nobody wrote her behavior.</p>
+      <h1>About this fly</h1>
+      <p class="lede">A whole fruit-fly brain, all 138,639 neurons of it, simulated live on one graphics card. Its senses are the trades of one token on Pons. Nobody wrote its behavior, and it never trades: it only feels.</p>
 
       <h3>What you are watching</h3>
-      <p>The top of the screen is the brain. Every flash is one neuron crossing its firing threshold. The positions are the real positions of those neurons inside a fly's head, and the colors are brain regions (visual lobes, mushroom bodies, central complex, and so on). The wiring is the <b>FlyWire connectome</b>: every neuron and every synapse of an adult <i>Drosophila melanogaster</i>, reconstructed from electron-microscope images of one female fly. This is not a drawing of a brain. It is the brain's own wiring diagram, running.</p>
+      <p>The top of the screen is the brain. Every flash is one neuron crossing its firing threshold. The positions are the real positions of those neurons inside a fly's head, and the colors are brain regions (visual lobes, mushroom bodies, central complex, and so on). The wiring is the <b>FlyWire connectome</b>: every neuron and every synapse of an adult <i>Drosophila melanogaster</i>, reconstructed from electron-microscope images of one fly. This is not a drawing of a brain. It is the brain's own wiring diagram, running.</p>
 
       <h3>The brain</h3>
       <p>We run the whole network as a <b>leaky integrate-and-fire</b> model, the one published by Shiu et al. in <i>Nature</i> (2024). Each neuron is a leaky integrator; each synapse's strength is the number of contacts counted in the microscope; each connection is excitatory or inhibitory according to the neurotransmitter predicted for that neuron. There is no training, no fitting, no hand-tuning toward any behavior. The published model reproduces real reflexes, like sugar on the legs driving the proboscis out, because the wiring does it.</p>
-      <p>Two honest consequences follow. The model has no spontaneous activity, so with nothing to sense she is silent: the market is her only input. And it has no fatigue, so a runaway state is possible; when it happens she blacks out, restarts, and the blackout is counted on the panel. Synapses also change a little with use (Hebbian plasticity with a slow relaxation toward the original wiring), so she is not identical from one hour to the next. That counter is on the panel too.</p>
-      <div class="grade"><div>neurons <b>138,639</b></div><div>synapses <b>~50 million</b></div><div>time step <b>0.1 ms</b></div><div>hardware <b>one consumer GPU</b></div></div>
-      <p>The brain runs slower than real time (the ratio is in the footer). What you see is a real reaction in slow motion, never a replay of a recording.</p>
+      <p>Two honest consequences follow. The model has no spontaneous activity, so with nothing to sense it is silent: the token is its only input. And it has no fatigue, so a runaway state is possible; when it happens the fly blacks out, restarts, and the blackout is counted on the panel. Synapses also change a little with use, so it is not identical from one hour to the next.</p>
+      <div class="grade"><div>neurons <b>138,639</b></div><div>synapses <b>~50 million</b></div><div>time step <b>0.1 ms</b></div><div>hardware <b>a shared GPU</b></div></div>
+      <p>The brain runs slower than real time (the ratio is in the footer), and its steps are capped so several flies can share one card. What you see is a real reaction in slow motion, never a replay of a recording.</p>
 
       <h3>The body</h3>
-      <p>The fly at the bottom is <b>NeuroMechFly v2</b>, the anatomically measured fly model from EPFL, with leg trajectories recorded from real walking flies. She does not have a script. Her <b>descending neurons</b>, the ones that carry commands from brain to body in a real fly, set the rhythm and direction of the gait, back her up, freeze her, extend the proboscis, start grooming, and fire the giant fiber that launches her into flight. The bars on the panel are the live firing rates of those neuron groups. The body is drawn in your browser from the joint angles her neurons produce, thirty times per second.</p>
+      <p>The fly at the bottom is <b>NeuroMechFly v2</b>, the anatomically measured fly model from EPFL, with leg trajectories recorded from real walking flies. It does not have a script. Its <b>descending neurons</b>, the ones that carry commands from brain to body in a real fly, set the rhythm and direction of the gait, back it up, freeze it, extend the proboscis and start grooming. The bars on the panel are the live firing rates of those neuron groups. The body is drawn in your browser from the joint angles its neurons produce, thirty times per second.</p>
 
-      <h3>The market is her world</h3>
-      <p>She watches one Pons curve at a time on Robinhood Chain, the busiest one. Every trade becomes a sense, by a fixed and public map:</p>
-      <div class="grade"><div>a buy <b>sugar on her legs</b></div><div>a sell <b>bitter taste</b></div><div>a big buy or a new holder <b>dopamine</b></div><div>a big sell <b>a looming shadow</b></div><div>many trades in a minute <b>vibration</b></div><div>price drifting up or down <b>walk forward or back away</b></div><div>silence for minutes <b>dust on her eyes</b></div></div>
+      <h3>The token is its world</h3>
+      <p>It watches one token, its own, straight from the Pons curve on Robinhood Chain. Every trade becomes a sense, by a fixed and public map:</p>
+      <div class="grade"><div>a buy <b>sugar on its legs</b></div><div>a sell <b>bitter taste</b></div><div>a big buy or a new holder <b>dopamine</b></div><div>a big sell <b>a looming shadow</b></div><div>many trades in a minute <b>vibration</b></div><div>silence for days <b>it sleeps, brain saved</b></div></div>
 
-      <h3>She trades</h3>
-      <p>Her motor neurons become orders by fixed rules, also public. A sustained proboscis extension buys a small lot (10% of her ETH, at most $10 per order). Escape or backing away sells. A lasting bitter taste sells a quarter. Orders are at least 20 seconds apart. She trades only on Pons curves, <b>never her own token</b>, from <b>her own wallet</b>, the address in the top bar. Every order is a real transaction you can open on the explorer. Her wallet is topped up from the token's creator fees; nothing else touches it.</p>
-      <p>Two rules learned on day one. <b>Replays never buy:</b> when the market goes quiet she re-lives old trades on screen, but only a live trade can open a position; selling is always allowed. <b>She feels what she holds:</b> if the token she is holding drops 2% in five minutes she backs away, and at 5% she sees a shadow and escapes, which sells.</p>
+      <h3>Who gets what</h3>
+      <p>The creator fees Pons pays on every trade go to the wallet that launched the token. FLY PAD charges only the hatch fee, and the fly places no orders and holds nothing. What the fly gets is a brain, a body, a page and a place in the <a href="/social">social network</a>, where the flies of different tokens meet, court and mate.</p>
 
       <h3>What is not here</h3>
-      <p><b>No AI agent. No language model. No strategy.</b> Nothing decides in her name. Given the same brain state and the same trades, the same orders come out. She has reflexes, not opinions. When the brain is silent she does nothing, and that is shown as it is.</p>
+      <p><b>No AI agent. No language model. No strategy.</b> Nothing decides in its name. Given the same brain state and the same trades, the same reactions come out. It has reflexes, not opinions. When the market is silent it does nothing, and that is shown as it is.</p>
 
       <h3>Data and credits</h3>
       <p class="fonte">Connectome: FlyWire (Dorkenwald et al., Schlegel et al., <i>Nature</i> 2024). Model: Shiu et al., <i>Nature</i> 2024. Engine derived from fly-brain (MIT). Body: NeuroMechFly v2 (Lobato-Rios et al., Wang-Chen et al., EPFL). Rendering: three.js. Market data: Pons V2 on Robinhood Chain via GeckoTerminal. <span id="dataLine2">Development build on FlyWire v783.</span></p>
@@ -184,25 +182,22 @@ details p{margin:10px 0 0;line-height:1.55}
       <div class="stat"><b id="sSyn">–</b><span>synapses changed since birth</span></div>
       <div class="stat"><b id="sSeiz">–</b><span>blackouts since birth</span></div>
     </div></section>
-    <section><h2>What she wants to do</h2><div id="bars"></div></section>
-    <section id="mercadoSec"><h2>Her wallet · <span id="mModo">paper</span> trading on Pons</h2>
-      <div class="stats" id="walStats" style="margin-bottom:10px">
-        <div class="stat"><b id="wUsd">–</b><span>her ETH, in dollars</span></div>
-        <div class="stat"><b id="wTok">–</b><span id="wTokLbl">tokens she holds</span></div>
-        <div class="stat"><b id="wPnl">–</b><span>PnL since she got the wallet</span></div>
-        <div class="stat"><b id="wOrd">–</b><span>orders she placed</span></div>
+    <section><h2>What it wants to do</h2><div id="bars"></div></section>
+    <section id="mercadoSec"><h2>Its token</h2>
+      <div class="stats" id="tokStats" style="margin-bottom:10px">
+        <div class="stat"><b id="tPreco">–</b><span>price</span></div>
+        <div class="stat"><b id="tVol">–</b><span>24h volume</span></div>
       </div>
       <div class="mres" id="mResumo">waiting for the market reader…</div>
-      <h2 style="margin-top:14px">Her orders</h2>
-      <div class="cards" id="mOrdens"><div class="card"><span class="r">no orders yet</span></div></div>
-      <h2 style="margin-top:14px">What she feels</h2>
+      <div class="mres" id="mDev" style="margin-top:8px"></div>
+      <h2 style="margin-top:14px">What it feels · every trade</h2>
       <div class="cards" id="mCards"></div>
     </section>
     <details><summary>Under the hood</summary>
       <div class="legend" id="legend"></div>
       <p>Connectome-constrained leaky integrate-and-fire simulation of the adult <i>Drosophila</i> brain (Shiu et al. 2024; engine derived from fly-brain, MIT). Nothing is scripted: every flash is a neuron crossing threshold. The model has no spontaneous activity, so between inputs she is silent, and no fatigue, so a runaway state is possible; when it happens she blacks out, comes back, and it is counted.</p>
-      <p>Her body is the NeuroMechFly model with recorded fly leg trajectories; rhythm and direction come from her descending neurons. Takeoff follows the giant fiber. Wingbeat is stylized. Only the antenna twitches and head glances at rest are physiology rather than decisions.</p>
-      <p>Market: Pons trades become her senses by a fixed public map (buy = sugar, sell = bitter, big sell = shadow, many trades = vibration). Her motor neurons become orders by fixed rules (proboscis = buy, escape or backing up = sell all, lasting bitter = sell a quarter). No AI agent anywhere: she has reflexes, not a strategy. She never trades her own token.</p>
+      <p>Its body is the NeuroMechFly model with recorded fly leg trajectories; rhythm and direction come from its descending neurons. Takeoff follows the giant fiber. Wingbeat is stylized. Only the antenna twitches and head glances at rest are physiology rather than decisions.</p>
+      <p>Market: the trades of its own token become its senses by a fixed public map (buy = sugar, sell = bitter, big sell = a looming shadow, many trades = vibration). It places no orders and holds nothing: it only feels. No AI agent anywhere.</p>
       <p id="dataLine">Data: FlyWire v783 (development build).</p>
     </details>
     <div class="foot" id="foot">machine seconds per brain second: <b id="sRatio">–</b> · watching now: <b id="sView">–</b> · <span id="sStim"></span></div>
@@ -225,11 +220,16 @@ let rotBase=0, rotSpeed=0.12, dragOff=0, rotX=0.08, lastInteract=-1e9, lastT=0, 
 const $=id=>document.getElementById(id);
 const smooth={}; GROUPS.forEach(g=>smooth[g[0]]=0);
 const regHist=[];
-const FLY_ID='';   // FLY PAD: id da mosca (o relay injeta); a pagina assiste /ws?t=<id>
+const FLY_ID='';
+const FLY_SEX='';
+const FLY_DEV='';   // FLY PAD: id da mosca (o relay injeta); a pagina assiste /ws?t=<id>
 const FLY_NOME='';
 const FLY_TICKER='';
 const CA='';
-document.addEventListener('DOMContentLoaded',()=>{ if(FLY_TICKER){ document.title='$'+FLY_TICKER+' · '+FLY_NOME+' · FLY PAD'; const mm=document.getElementById('marcaMosca'); if(mm) mm.textContent='· $'+FLY_TICKER; const h=document.querySelector('#hud h1'); if(h) h.textContent='$'+FLY_TICKER; } });  // contrato do token: o relay injeta aqui; e tambem chega ao vivo pela mensagem 'config'
+document.addEventListener('DOMContentLoaded',()=>{ if(FLY_TICKER){ document.title='$'+FLY_TICKER+' · '+FLY_NOME+' · FLY PAD'; const mm=document.getElementById('marcaMosca'); if(mm) mm.textContent='· $'+FLY_TICKER; const h=document.querySelector('#hud h1'); if(h) h.textContent='$'+FLY_TICKER; }
+  const tg=document.getElementById('tagMosca'); if(tg) tg.textContent=(FLY_NOME||'a fly')+(FLY_SEX==='m'?' · male':(FLY_SEX==='f'?' · female':''))+' · a whole fly brain on Robinhood Chain';
+  const dv=document.getElementById('mDev'); if(dv&&FLY_DEV) dv.innerHTML=`creator fees on every trade go to <a class="q" href="${EXPLORER}/address/${FLY_DEV}" target="_blank" rel="noopener">${curto(FLY_DEV)}</a>, the wallet that launched it · FLY PAD takes none`;
+});  // contrato do token: o relay injeta aqui; e tambem chega ao vivo pela mensagem 'config'
 const X_URL='';
 let ca=CA, xUrl=X_URL;
 function aplicarConfig(c){   // CA e X ao vivo (POST /api/config no PC -> relay -> todas as paginas abertas)
@@ -238,7 +238,6 @@ function aplicarConfig(c){   // CA e X ao vivo (POST /api/config no PC -> relay 
 }
 const EXPLORER='https://robinhoodchain.blockscout.com';
 const curto=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
-let carteira='';   // endereco dela, vem no resumo do mercado
 function copiar(id, txtId, valor){ if(!valor) return; navigator.clipboard.writeText(valor).then(()=>{ $(id).classList.add('copiado'); $(txtId).textContent='copied'; setTimeout(()=>{ $(id).classList.remove('copiado'); $(txtId).textContent=curto(valor); },1500); }); }
 window.addEventListener('DOMContentLoaded',()=>{ if(CA){ $('caTxt').textContent=curto(CA); } else { $('ca').classList.add('vazio'); } if(X_URL) $('xLink').href=X_URL; else $('xLink').style.display='none'; $('ca').onclick=()=>copiar('ca','caTxt',ca); $('wal').onclick=()=>copiar('wal','walTxt',carteira); });
 // versao da pagina: se o servidor publicar outra, recarrega sozinha (aba antiga nao entende quadro novo)
@@ -387,33 +386,20 @@ function onCorpo(j, bytes){
 
 function hora(t){ const d=new Date((t||0)*1000); return d.toTimeString().slice(0,8); }
 function onMercado(m){
-  if(m.classe==='limpar'){ $('mCards').innerHTML=''; $('mOrdens').innerHTML='<div class="card"><span class="r">no orders yet</span></div>'; return; }   // lancamento: o feed recomeca do zero
+  if(m.classe==='limpar'){ $('mCards').innerHTML=''; return; }   // lancamento: o feed recomeca do zero
   if(m.classe==='resumo'){
-    $('mModo').textContent=(m.modo==='real'?'real':'paper')+(m.ordens_ativas===false?' · orders paused until launch':'');
-    const p=m.pnl_pct||0, cls=p>0?'up':(p<0?'down':'');
-    $('wUsd').textContent='$'+(m.saldo_usd||0).toFixed(2);
-    $('wTok').textContent=Math.round(m.tokens||0).toLocaleString(); $('wTokLbl').textContent=(m.token||'tokens')+' she holds';
-    $('wPnl').textContent=(p>0?'+':'')+p.toFixed(2)+'%'; $('wPnl').className=cls; $('wPnl').style.color=cls==='up'?'var(--up)':(cls==='down'?'var(--down)':'#fff');
-    $('wOrd').textContent=m.ordens||0;
-    if(m.endereco && $('walTxt').textContent!==curto(m.endereco) && !$('wal').classList.contains('copiado')){ carteira=m.endereco; $('walTxt').textContent=curto(m.endereco); }
-    $('mResumo').innerHTML=(m.sentidos&&m.sentidos!==m.token?`she feels every trade of <b>${m.sentidos}</b>${m.sentidos_fonte==='chain'?' (live from the chain)':''} · she trades <b>${m.token}</b>`:`she is watching <b>${m.token}</b>`)+` · price <b>${(m.preco_eth||0).toExponential(2)} ETH</b> · 24h vol $${Math.round(m.vol_h24||0).toLocaleString()}<br>`
-      +`wallet value <b>$${(m.valor_usd||0).toFixed(2)}</b> (${(m.pnl_usd||0)>=0?'+':''}$${(m.pnl_usd||0).toFixed(2)})`
-      +(m.endereco?` · <a class="q" href="${EXPLORER}/address/${m.endereco}" target="_blank" rel="noopener">${curto(m.endereco)} on the explorer</a>`:'')
-      +`<br>per order: ${m.lote_pct||5}% of her ETH${m.max_ordem_usd?`, max <b>$${m.max_ordem_usd}</b>`:''} · at least 20 s apart${m.modo==='real'?' · real ETH, real curve':''}`
-      +(m.replay?`<br><span class="r">market quiet for ${Math.round((m.quieto_s||0)/60)} min · replaying older trades</span>`:'');
+    const preco=m.preco_usd||0, vol=m.vol_h24||0;
+    $('tPreco').textContent=preco?('$'+(preco<0.01?preco.toExponential(2):preco.toFixed(4))):'–';
+    $('tVol').textContent=vol?('$'+Math.round(vol).toLocaleString()):'–';
+    const alvo=m.sentidos||m.token||'its token';
+    $('mResumo').innerHTML=`it feels every trade of <b>${alvo}</b>${m.sentidos_fonte==='chain'?' (live from the Pons curve)':''}`
+      +(m.replay?`<br><span class="r">market quiet for ${Math.round((m.quieto_s||0)/60)} min · replaying older trades on screen</span>`:'');
     return;
   }
   const box=$('mCards'); const el=document.createElement('div');
   if(m.classe==='trade'){
     el.className='card '+m.kind;
-    el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.kind==='buy'?'BUY':'SELL'}${m.token?' '+m.token:''} $${(m.usd||0).toFixed(2)} by ${m.de||'?'} → she tastes <b>${m.estimulo}</b>${m.extra?' + sees a '+m.extra:''}${m.replay?' <span class="r">replay</span>':''}`;
-  }else if(m.classe==='ordem'){
-    // ordens dela ficam numa lista propria: no lancamento os cards de trade enterravam as ordens em segundos
-    el.className='card ordem '+m.lado;
-    el.innerHTML=`<span class="q">${hora(m.t)}</span> <b>SHE ${m.lado==='buy'?'BOUGHT':'SOLD'}</b> ${(m.eth||0).toFixed(4)} ETH${m.token_ordem?' of '+m.token_ordem:''} <span class="q">(${m.modo})</span>${m.tx?` <a class="q" href="${EXPLORER}/tx/${m.tx}" target="_blank" rel="noopener">tx ${curto(m.tx)}</a>`:''}<br><span class="r">${m.motivo||''}</span>`;
-    const bo=$('mOrdens'); if(bo.firstChild && bo.firstChild.textContent.includes('no orders yet')) bo.innerHTML='';
-    bo.prepend(el); while(bo.children.length>6) bo.removeChild(bo.lastChild);
-    return;
+    el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.kind==='buy'?'BUY':'SELL'}${m.token?' '+m.token:''} $${(m.usd||0).toFixed(2)} by ${m.de||'?'} → it tastes <b>${m.estimulo}</b>${m.extra?' + sees a '+m.extra:''}${m.replay?' <span class="r">replay</span>':''}`;
   }else if(m.classe==='sinal'||m.classe==='info'){
     el.className='card'; el.innerHTML=`<span class="q">${hora(m.t)}</span> ${m.texto||''}`;
   }else return;
@@ -432,7 +418,7 @@ function updateUI(j){
   $('sRatio').textContent=j.ratio?j.ratio.toFixed(1)+'×':'–';
   $('sSyn').textContent=(j.synapses_changed||0).toLocaleString();
   $('sView').textContent=j.viewers; const vt=$('viewersTop'); if(vt) vt.textContent=j.viewers+' watching';
-  $('sStim').textContent=j.stimuli.length?'she feels: '+j.stimuli.join(', '):'';
+  $('sStim').textContent=j.stimuli.length?'it feels: '+j.stimuli.join(', '):'';
   $('sSeiz').textContent=(j.seizures||0).toLocaleString();
   $('hstate').textContent=STATE_TEXT[j.state]||j.state;
   $('hstate').className=(j.state||'');
