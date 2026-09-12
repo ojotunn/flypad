@@ -291,7 +291,14 @@ class Libido:
         return ev
 
 
+PAR = bool(os.environ.get('FLY_PAR'))   # so o SEX FLY tem par; no FLY PAD a mosca vive sozinha
+
+
 def publicar(ev):
+    if ev.get('classe') == 'sexo' and not PAR:
+        return                     # mosca sozinha: nao ha cruzamento para contar
+    if ev.get('classe') == 'info' and 'wallet' in str(ev.get('texto', '')) and not ordens_ativas():
+        return                     # sem ordens, a carteira nao faz parte do que a pagina mostra
     try:
         http_json(SERVIDOR + '/api/mercado', ev, timeout=5)
     except Exception:
@@ -695,7 +702,7 @@ def main():
                     if carteira is None:
                         carteira = Carteira(SALDO_ETH if SALDO_ETH > 0 else SALDO_USD / eth_usd)
                     SALDO0 = carteira.eth0
-                    rotulo = 'her wallet on Robinhood Chain' if MODO == 'real' else 'her paper wallet'
+                    rotulo = 'its wallet on Robinhood Chain' if MODO == 'real' else 'its paper wallet'
                     print(f'[mercado] ETH a ${eth_usd:,.0f}: saldo {SALDO0:.4f} ETH = ${SALDO0 * eth_usd:.0f}; '
                           f'teto ${MAX_ORDEM_USD:.0f} = {MAX_ORDEM_ETH:.5f} ETH por ordem', flush=True)
                     publicar({'classe': 'info', 'texto': f'{rotulo}: {SALDO0:.4f} ETH (${SALDO0 * eth_usd:.0f}), max ${MAX_ORDEM_USD:.0f} per order'})
