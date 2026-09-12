@@ -38,7 +38,7 @@ export FLY_CORPO_PISO=preto FLY_CORPO_CORES=real
 export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
 export FLY_CEREBRO_AFINIDADE=0 FLY_CORPO_AFINIDADE=0
 export FLY_PLATAFORMA="${FLY_PLATAFORMA:-0x3EF754638fF72dC83693B3D099eEf2C335D804A7}"   # carteira do FLY PAD: recebe a taxa de lancamento
-export FLY_TAXA_ETH="${FLY_TAXA_ETH:-0}"   # 0 = hatch de graca (fase de teste); as creator fees do token sao do dev
+export FLY_TAXA_ETH="${FLY_TAXA_ETH:-0.002}"   # taxa de lancamento do FLY PAD (~US$ 5); as creator fees do token sao do dev
 pkill -f 'gerente/loop_pod.sh' || true; pkill -f 'gerente/gerente.py' || true
 pkill -f 'brain/servidor.py' || true; pkill -f 'corpo/corpo.py' || true; pkill -f 'mercado/mercado.py' || true   # o gerente novo reabre as moscas
 sleep 2
