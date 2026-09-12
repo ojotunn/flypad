@@ -201,14 +201,14 @@ def traduzir_trade(t, p50, p90, novo_holder):
         lista = [('sugar', ms)]
         extras = []
         if t['usd'] >= p90:
-            lista.append(('reward', 500.0)); extras.append('big buy → she screams, dopamine floods both brains')
+            lista.append(('reward', 500.0)); extras.append('big buy → dopamine floods the brain')
         elif novo_holder:
             lista.append(('reward', 300.0)); extras.append('new holder → dopamine hit')
         return lista, 'sugar', extras
     lista = [('bitter', ms)]
     extras = []
     if t['usd'] >= p90:
-        lista.append(('lc4', 400.0)); extras.append('big sell → she kicks him off')
+        lista.append(('lc4', 400.0)); extras.append('big sell → a looming shadow')
     elif t['usd'] >= p50:
         lista.append(('mdn', 300.0)); extras.append('sell → he slows down')
     return lista, 'bitter', extras
@@ -584,11 +584,11 @@ def main():
         if var <= -0.05:
             ultimo_posicao = agora
             estimular('lc4', 500.0)
-            publicar({'classe': 'sinal', 'texto': f'{pool["nome"]}, which she holds, {var * 100:.1f}% in 5 min → shadow', 'estimulo': 'lc4'})
+            publicar({'classe': 'sinal', 'texto': f'{pool["nome"]}, {var * 100:.1f}% in 5 min → shadow', 'estimulo': 'lc4'})
         elif var <= -0.02:
             ultimo_posicao = agora
             estimular('mdn', 400.0)
-            publicar({'classe': 'sinal', 'texto': f'{pool["nome"]}, which she holds, {var * 100:.1f}% in 5 min → backs away', 'estimulo': 'mdn'})
+            publicar({'classe': 'sinal', 'texto': f'{pool["nome"]}, {var * 100:.1f}% in 5 min → backs away', 'estimulo': 'mdn'})
 
     def tendencia(serie):
         """Preco em 5 min: subindo firme = impulso de andar; caindo firme = empurrao de re (a cada 2 min)."""
@@ -661,7 +661,7 @@ def main():
         if pool is not None and agora - ultima_leitura >= INTERVALO and proibido(pool):
             # o token que ela olha entrou na lista de vetados (o dela acabou de ser lancado): larga na hora
             print(f'[mercado] {pool["nome"]} entrou na lista de vetados; ela larga e escolhe outro', flush=True)
-            publicar({'classe': 'info', 'texto': f'{pool["nome"]} is off limits for her (her own token is never traded) · she moves on'})
+            publicar({'classe': 'info', 'texto': f'{pool["nome"]} is off limits (a fly never trades its own token) · it moves on'})
             if MODO == 'real':
                 carteira.largar_token()
             pool = None
@@ -732,14 +732,14 @@ def main():
                     enderecos.update(t['de'] for t in sent.historico)
                     print(f'[mercado] sentidos: {sent.nome} direto da chain (curva {sent.curva}); '
                           f'{len(sent.historico)} trades recentes carregados para o replay', flush=True)
-                    publicar({'classe': 'info', 'texto': f'she now feels every trade of {sent.nome}, straight from the chain'})
+                    publicar({'classe': 'info', 'texto': f'it now feels every trade of {sent.nome}, straight from the chain'})
                 except Exception as e:
                     prox_sent_tentativa = agora + 30
                     print(f'[mercado] feed da chain falhou para {cfg}: {str(e)[:80]}; tento em 30 s', flush=True)
             else:
                 sent, sent_cfg = None, ''
                 historico.clear(); enderecos.clear(); replay_fila.clear()
-                publicar({'classe': 'info', 'texto': f'she feels the trades of {pool["nome"]} again'})
+                publicar({'classe': 'info', 'texto': f'it feels the trades of {pool["nome"]} again'})
         if sent is not None and agora - ultima_sent >= SENTIDOS_INTERVALO:
             ultima_sent = agora
             novos = sent.ler(eth_usd)
@@ -752,7 +752,7 @@ def main():
         if agora - ultimo_evento > 240 and agora - ultimo_poeira > 240:
             ultimo_poeira = agora
             estimular('eye_touch', 400.0)
-            publicar({'classe': 'sinal', 'texto': 'nothing for 4 min → dust on her eyes', 'estimulo': 'eye_touch'})
+            publicar({'classe': 'sinal', 'texto': 'nothing for 4 min → dust on its eyes', 'estimulo': 'eye_touch'})
 
         if carteira is None or not calibrado:
             time.sleep(1.0)
@@ -767,7 +767,7 @@ def main():
             if agora - ultima_curva >= 300:
                 ultima_curva = agora
                 if carteira.token and not carteira.ainda_na_curva():
-                    publicar({'classe': 'info', 'texto': f'{pool["nome"]} graduated off the curve · she moves on'})
+                    publicar({'classe': 'info', 'texto': f'{pool["nome"]} graduated off the curve · it moves on'})
                     print(f'[mercado] {pool["nome"]} graduou; trocando de token', flush=True)
                     carteira.largar_token()
                     pool = None
@@ -777,7 +777,7 @@ def main():
                 if tipo == 'deposit':
                     publicar({'classe': 'info', 'texto': f'wallet topped up: +{dado:.4f} ETH (${dado * eth_usd:.2f})'})
                 elif tipo == 'withdrawal':
-                    publicar({'classe': 'info', 'texto': f'{-dado:.4f} ETH left her wallet (${-dado * eth_usd:.2f})'})
+                    publicar({'classe': 'info', 'texto': f'{-dado:.4f} ETH left its wallet (${-dado * eth_usd:.2f})'})
                 else:
                     publicar({'classe': 'info', 'texto': str(dado)})
                 print(f'[mercado] {tipo}: {dado}', flush=True)
@@ -807,7 +807,7 @@ def main():
             if eth_usd > 0:
                 MAX_ORDEM_ETH = MAX_ORDEM_USD / eth_usd
             print(f'[mercado] ajuste: teto ${MAX_ORDEM_USD:.0f} por ordem, lote {ORDEM_FRACAO:.0%}', flush=True)
-            publicar({'classe': 'info', 'texto': f'her order size changed: {ORDEM_FRACAO:.0%} of her ETH, max ${MAX_ORDEM_USD:.0f} per order'})
+            publicar({'classe': 'info', 'texto': f'order size changed: {ORDEM_FRACAO:.0%} of its ETH, max ${MAX_ORDEM_USD:.0f} per order'})
         elif eth_usd > 0 and MAX_ORDEM_USD > 0:
             MAX_ORDEM_ETH = MAX_ORDEM_USD / eth_usd     # acompanha o preco do ETH
         # ----- interruptor das ordens (relido a cada volta; muda sem reiniciar) -----
@@ -815,8 +815,8 @@ def main():
         if agora_ativas != ativas:
             ativas = agora_ativas
             print(f'[mercado] ordens {"LIGADAS" if ativas else "DESLIGADAS"}', flush=True)
-            publicar({'classe': 'info', 'texto': 'orders are ON: her reflexes now place real orders' if ativas
-                      else 'orders are paused until the token launches · she still feels every trade'})
+            publicar({'classe': 'info', 'texto': 'orders are ON: its reflexes now place real orders' if ativas
+                      else 'orders are paused until the token launches · it still feels every trade'})
         if not ativas:
             acima_desde.clear()            # sem cronometro acumulado: quando ligar, comeca do zero
         # reprise nao compra (regra do dia 1: um lancamento so tem compras, a reprise so dava acucar e ela comprou
