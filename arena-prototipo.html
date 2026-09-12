@@ -1,4 +1,4 @@
-<title>Flypad Arena</title>
+<title>Flypad Social</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* FLY PAD — Arena: todas as moscas acordadas no mesmo chao. Protótipo: corpos 3D reais, poses gravadas, eventos simulados. */
@@ -49,8 +49,8 @@ aside h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transf
 </style>
 
 <header>
-  <a class="wordmark" href="#"><i></i>FLY PAD <span>· Arena</span></a>
-  <nav><a href="#">Colony</a><a href="#" class="on">Arena</a><a href="#">Hatch a fly</a></nav>
+  <a class="wordmark" href="#"><i></i>FLY PAD <span>· Social</span></a>
+  <nav><a href="#">Colony</a><a href="#" class="on">Social</a><a href="#">Hatch a fly</a></nav>
   <span class="spacer"></span>
   <span class="chip"><b></b><span id="chip">6 flies awake</span></span>
   <a class="btn primary" href="#">Hatch a fly</a>
@@ -58,7 +58,7 @@ aside h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transf
 <main>
   <div id="palco">
     <canvas id="cv"></canvas>
-    <div id="hud"><div class="t">The arena</div><div class="s" id="hudS">every fly here is a token · bodies moved by their own neurons · prototype: simulated market</div></div>
+    <div id="hud"><div class="t">The social network</div><div class="s" id="hudS">every fly here is a token · bodies moved by their own neurons · prototype: simulated market</div></div>
     <div id="rotulos"></div>
     <div id="legenda"><span><i style="background:#CFE6FF"></i>female</span><span><i style="background:#fff;box-shadow:0 0 6px #CFE6FF"></i>brain · every flash is a neuron firing</span><span><i style="background:#FFB3A8"></i>male</span><span><i style="background:#F2E6C9"></i>egg / newborn</span><span><i style="background:#6B605A"></i>asleep</span></div>
     <div id="dica">drag to orbit · click a fly to open its page</div>
@@ -71,7 +71,7 @@ aside h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transf
       <div class="stat"><b id="sBorn">0</b><span>born today</span></div>
     </div></section>
     <section><h4>Who is here</h4><div class="lista" id="lista"></div></section>
-    <h4 style="padding:12px 16px 0">Colony feed</h4>
+    <h4 style="padding:12px 16px 0">Social feed</h4>
     <div id="feed"></div>
   </aside>
 </main>
@@ -415,5 +415,5 @@ function laco(){
   const lista=$('lista'); lista.innerHTML=moscas.map(f=>`<div class="mosca"><b>$${f.ticker}</b><div class="lib"><i style="width:${f.libido*100}%"></i></div><span class="st">${f.dorme?'asleep':(f.filho?'newborn':(f===ELA?fase.replace('idle','walking').replace('done','walking'):(f.oculta?fase:f.seg)))}</span></div>`).join('');
   $('sAwake').textContent=moscas.filter(f=>!f.dorme).length; $('sMating').textContent=fase==='mating'?1:0; $('sEggs').textContent=ovos.length; $('sBorn').textContent=nascidas; $('chip').textContent=moscas.filter(f=>!f.dorme).length+' flies awake · '+moscas.filter(f=>f.dorme).length+' asleep';
 }
-feed('amor', 'the arena opens · every fly is a token on Pons'); laco();
+feed('amor', 'the social network opens · every fly is a token on Pons'); laco();
 </script>

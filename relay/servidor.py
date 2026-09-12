@@ -343,7 +343,7 @@ async def api_mercado(request):
 
 
 async def versao(request):
-    h = hashlib.md5((SITE / 'publico.html').read_bytes() + (SITE / 'fly-cliente.js').read_bytes() + (SITE / 'home.html').read_bytes()).hexdigest()[:12]
+    h = hashlib.md5((SITE / 'publico.html').read_bytes() + (SITE / 'fly-cliente.js').read_bytes() + (SITE / 'home.html').read_bytes() + (SITE / 'social.html').read_bytes()).hexdigest()[:12]
     return web.Response(text=h, content_type='text/plain', headers={'Cache-Control': 'no-store'})
 
 
@@ -384,10 +384,15 @@ async def pagina_mosca(request):
     return web.Response(text=html, content_type='text/html', headers={'Cache-Control': 'no-store'})
 
 
-async def arena(request):
-    """Arena: todas as moscas no mesmo chao (por enquanto a previa com mercado simulado; a versao ao vivo vem do gerente)."""
-    html = (SITE / 'arena.html').read_text(encoding='utf-8')
+async def social(request):
+    """Rede social das moscas: todas no mesmo chao, se cortejando e cruzando (por enquanto a previa com mercado
+    simulado; a versao ligada aos cerebros ao vivo vem do gerente)."""
+    html = (SITE / 'social.html').read_text(encoding='utf-8')
     return web.Response(text=html, content_type='text/html', headers={'Cache-Control': 'no-store'})
+
+
+async def arena_antiga(request):
+    raise web.HTTPFound('/social')
 
 
 async def home(request):
@@ -401,7 +406,8 @@ def main():
     app['dados'] = {'colonia': [], 'colonia_t': 0.0, 'fila': [], 'fila_ca': [], 'tickets': {}, 'max_acordadas': None}
     app.router.add_get('/', home)
     app.router.add_get('/t/{id}', pagina_mosca)
-    app.router.add_get('/arena', arena)
+    app.router.add_get('/social', social)
+    app.router.add_get('/arena', arena_antiga)
     app.router.add_get('/ws', ws_handler)
     app.router.add_get('/fonte', fonte)
     app.router.add_get('/fila', fila_get)
