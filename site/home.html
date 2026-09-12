@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FLY PAD — every coin you launch becomes a fly</title>
 <meta name="description" content="A launchpad on Robinhood Chain where every coin gets a whole fruit-fly brain, 138,639 neurons simulated live, with the token's trades wired into its senses.">
+<link rel="icon" href="/static/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FLY PAD">
+<meta property="og:title" content="FLY PAD — every coin you launch becomes a fly">
+<meta property="og:description" content="A launchpad on Robinhood Chain where every token gets a whole fruit-fly brain, 138,639 neurons simulated live on a GPU, with its trades wired into its senses.">
+<meta property="og:image" content="https://flypad-production-f6f5.up.railway.app/static/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FLY PAD — every coin you launch becomes a fly">
+<meta name="twitter:description" content="Every token gets a whole fruit-fly brain, simulated live. Its trades are its senses.">
+<meta name="twitter:image" content="https://flypad-production-f6f5.up.railway.app/static/og.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* FLY PAD — home da colonia. Mundo unico e escuro: preto de cuticula, vermelho do olho da mosca. */
@@ -24,6 +36,7 @@ a{color:inherit}button{font:inherit;color:inherit;cursor:pointer}:focus-visible{
 header{position:sticky;top:0;z-index:20;background:rgba(11,9,8,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;gap:26px;height:58px}
 .wordmark{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:10px}
+.wordmark img{width:28px;height:28px;border-radius:7px;object-fit:cover;box-shadow:0 0 14px rgba(255,78,42,.45);border:1px solid var(--line2)}
 .wordmark i{width:10px;height:10px;border-radius:50%;background:var(--eye);box-shadow:0 0 12px var(--eye)}
 nav{display:flex;gap:18px;font-size:14px;color:var(--muted)}nav a{text-decoration:none}nav a:hover{color:var(--ink)}
 .spacer{flex:1}
@@ -79,7 +92,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);fon
 </head>
 <body>
 <header><div class="wrap">
-  <a class="wordmark" href="/"><i></i>FLY PAD</a>
+  <a class="wordmark" href="/"><img src="/static/logo.png" alt="">FLY PAD</a>
   <nav><a href="#colony">Colony</a><a href="/social">Social</a><a href="#hatch">Hatch a fly</a><a href="#how">How it works</a></nav>
   <span class="spacer"></span>
   <span class="chip"><b></b><span id="liveCount">connecting…</span></span>
