@@ -381,6 +381,7 @@ async function sincronizar(){
   $('sView').textContent=moscas.reduce((t,f)=>t+(f.viewers||0),0);
   $('chip').textContent=moscas.length?(moscas.filter(f=>!f.dorme).length+' awake · '+moscas.length+' in the colony'):'no flies yet';
   if(!moscas.length) $('hudS').textContent='no flies yet · hatch the first one and it lands here';
+  const lst=$('lista'); if(lst) lst.innerHTML=moscas.length?moscas.map(f=>`<div class="mosca"><b>$${f.ticker}</b><div class="lib"><i style="width:${Math.min(100,(f.spikes||0)/600)}%"></i></div><span class="st">${f.dorme?'asleep':(f.stateReal==='active'?'reacting':'quiet')}</span></div>`).join(''):'<div class="mosca"><span class="st">no flies yet</span></div>';
 }
 sincronizar(); setInterval(sincronizar, 5000);
 

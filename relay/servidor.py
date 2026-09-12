@@ -254,7 +254,9 @@ async def api_imagem(request):
         raise web.HTTPBadRequest(text='image too big (max 600 KB after the crop)')
     nome = hashlib.sha256(bruto).hexdigest()[:16] + '.' + ext
     (IMG_DIR / nome).write_bytes(bruto)
-    return web.json_response({'url': str(request.url.origin()) + '/img/' + nome, 'bytes': len(bruto)})
+    host = request.headers.get('X-Forwarded-Host') or request.host          # atras do proxy do Railway o origin vem http
+    proto = request.headers.get('X-Forwarded-Proto', 'https')
+    return web.json_response({'url': f'{proto}://{host}/img/{nome}', 'bytes': len(bruto)})
 
 
 async def api_config(request):
