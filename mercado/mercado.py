@@ -277,11 +277,15 @@ def estimular(nome, ms, quem='ambos'):
 class SentidosGecko:
     """Depois da graduacao os trades saem da curva e passam a acontecer no pool: o indexador vira a fonte.
     Mesmo formato de trade do SentidosChain, para os estimulos e o replay nao mudarem."""
+    INTERVALO = float(os.environ.get('FLY_MERCADO_POOL_INTERVALO', '15'))   # o indexador tem limite de chamadas
+
     def __init__(self, pool, nome, eth_usd=0.0):
         self.pool = self.curva = pool
         self.nome = nome
         self.preco_eth = 0.0
         self.erro = ''
+        self.ultima = 0.0
+        self.vazias = 0
         self.historico = deque(maxlen=600)
         self.vistos = set()
         trades = ler_trades(pool)
@@ -294,7 +298,19 @@ class SentidosGecko:
             self.preco_eth = (self.historico[-1].get('preco_usd') or 0) / eth_usd
 
     def ler(self, eth_usd=0.0):
+        agora = time.time()
+        if agora - self.ultima < self.INTERVALO:
+            return []
+        self.ultima = agora
         trades = ler_trades(self.pool)
+        if not trades:                      # indexador fora do ar ou limite de chamadas: avisa em vez de ficar surda
+            self.vazias += 1
+            self.erro = 'the indexer is not answering' if self.vazias >= 4 else ''
+            if self.vazias in (4, 40):
+                print(f'[mercado] o indexador nao respondeu {self.vazias}x seguidas para o pool de {self.nome}', flush=True)
+            return []
+        self.vazias = 0
+        self.erro = ''
         novos = [t for t in trades if t['tx'] not in self.vistos]
         self.vistos.update(t['tx'] for t in trades)
         if len(self.vistos) > 6000:
