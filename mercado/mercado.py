@@ -813,9 +813,12 @@ def main():
                     historico.clear(); enderecos.clear(); replay_fila.clear(); precos_sent.clear()
                     historico.extend(sent.historico)                 # trades recentes da chain: material do replay
                     enderecos.update(t['de'] for t in sent.historico)
-                    print(f'[mercado] sentidos: {sent.nome} direto da chain (curva {sent.curva}); '
+                    via_pool = isinstance(sent, SentidosGecko)
+                    origem = f'pelo pool {str(sent.curva)[:12]} (indexador)' if via_pool else f'direto da chain (curva {sent.curva})'
+                    print(f'[mercado] sentidos: {sent.nome} {origem}; '
                           f'{len(sent.historico)} trades recentes carregados para o replay', flush=True)
-                    publicar({'classe': 'info', 'texto': f'it now feels every trade of {sent.nome}, straight from the chain'})
+                    publicar({'classe': 'info', 'texto': f'it now feels every trade of {sent.nome}, '
+                              + ('from the pool where it trades now' if via_pool else 'straight from the chain')})
                 except Exception as e:
                     prox_sent_tentativa = agora + 30
                     print(f'[mercado] feed da chain falhou para {cfg}: {str(e)[:80]}; tento em 30 s', flush=True)
@@ -996,7 +999,7 @@ def main():
                       'vol_token_h24': (ficha_token or {}).get('vol_h24', 0),
                       'graduado': (ficha_token or {}).get('graduado', False),
                       'supply_token': (ficha_token or {}).get('supply', 0),
-                      'sentidos_fonte': 'chain' if sent is not None else 'gecko',
+                      'sentidos_fonte': ('pool' if isinstance(sent, SentidosGecko) else 'chain') if sent is not None else 'gecko',
                       'sentidos_erro': (sent.erro if sent is not None else ''),
                       'quieto_s': round(agora - ultimo_trade_real), 'replay': REPLAY and agora - ultimo_trade_real > 90})
         time.sleep(1.0)
